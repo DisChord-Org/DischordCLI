@@ -29,7 +29,7 @@ program.command('version').addArgument('update').description('Gesti√≥n de versi√
   if (args.length === 0) {
     console.log(`DisChord CLI v${version}`);
   } else if (args[0] === 'update') {
-    let totalSteps = 11;
+    let totalSteps = 12;
 
     progressBar(1, totalSteps, 'Comprobando disposici√≥n de git...'); // Barra de progreso.
     exec('git help', (m) => { if (m) return console.log('Debe instalar git CLI.'); });
@@ -65,7 +65,10 @@ program.command('version').addArgument('update').description('Gesti√≥n de versi√
           progressBar(10, totalSteps, 'Borrando repositorio clonado...'); // Barra de progreso.
           if (fs.existsSync(path.join(__dirname, './DisChord/'))) fs.rmSync(path.join(__dirname, './DisChord/'), { recursive: true });
 
-          progressBar(11, totalSteps, 'Limpiando...'); // Barra de progreso.
+          progressBar(11, totalSteps, 'Creando carpeta de dependencias...'); // Barra de progreso.
+          if (!fs.existsSync(path.join(__dirname, './dependencies/'))) fs.mkdirSync(path.join(__dirname, './dependencies/'), { recursive: true });
+
+          progressBar(12, totalSteps, 'Limpiando...'); // Barra de progreso.
         });
       });
     });
