@@ -4,7 +4,7 @@ const { program } = require('commander');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const version = fs.readFileSync(path.join(__dirname, './version'));
+const version = fs.readFileSync(path.join(__dirname, '../version'));
 const args = process.argv.slice(3);
 const commands = require('./Commands/index');
 
