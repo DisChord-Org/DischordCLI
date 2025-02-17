@@ -7,7 +7,7 @@ function version(args) {
   if (args.length === 0) {
     console.log(`DisChord CLI v${fs.readFileSync(path.join(__dirname, '../../../version'))}`);
   } else if (args[0] === 'update') {
-    let totalSteps = 12
+    let totalSteps = 12;
 
     progressBar(1, totalSteps, 'Comprobando disposición de git...'); // Barra de progreso.
     exec('git help', (m) => { if (m) return console.log('Debe instalar git CLI.'); });
