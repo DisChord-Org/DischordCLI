@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { readdirSync, writeFileSync } = require("fs");
+const { readdirSync, createWriteStream, existsSync, mkdirSync } = require("fs");
 const path = require("path");
 const { host, port } = require('../../../api.json');
 
@@ -17,23 +17,26 @@ async function pkg(args) {
                 if (args[2] && !find.data.versions.includes(args[2].slice(1))) return console.log(`La versión ${args[2]} no existe.`);
                 console.log(find.data);
 
-                const response = axios.get(
+                const response = await axios.get(
                     args[2]?.startWith('v')
-                    ? `http://${host}:${port}/dependencies/${args[1]}/${args[2].slice(1)}`
-                    : `http://${host}:${port}/dependencies/${args[1]}`
+                    ? `http://${host}:${port}/dependencies/${find.data.type}/${args[1]}/${args[2].slice(1)}`
+                    : `http://${host}:${port}/dependencies/${find.data.type}/${args[1]}/${find.data.actualVersion}`
                 );
                 const files = response.data.files;
+
+                if (!existsSync(`./dependencies/${args[1]}`)) mkdirSync(`./dependencies/${args[1]}`);
 
                 for (const file of files) {
                     const fileResponse = await axios.get(file.url, { responseType: 'stream' });
                     const writer = createWriteStream(`./dependencies/${args[1]}/${file.name}`);
+                    console.log(`Fichero ${file.name} descargado en ${args[1]}`);
                     fileResponse.data.pipe(writer);
                 }
 
                 console.log('Descarga completa');
 
             } catch (error) {
-                console.log(error.message)
+                console.log(error)
                 console.error('Dependencia no encontrada.');
             }
             break;
