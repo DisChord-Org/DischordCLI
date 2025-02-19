@@ -14,6 +14,9 @@ program.command('version').addArgument('update').description('Gestión de versi�
   commands.version(args);
 });
 
+program.command('pkg').addArgument('install').argument('version', 'La versión a gestionar').addArgument('uninstall').description('Gestiona paquetes de DisChord').action(() => {
+  commands.pkg(args);
+});
 
 if ((program.commands.filter(command => command._name === process.argv.slice(2)[0])).length == 0 && process.argv.slice(2).length > 0 && fs.existsSync(path.join(__dirname, process.argv.slice(2).join('\\')))) {
   const Interpreter = require('../dist/main');
