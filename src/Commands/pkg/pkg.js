@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { readdirSync, createWriteStream, existsSync, mkdirSync } = require("fs");
+const { readdirSync, createWriteStream, existsSync, mkdirSync, cpSync, rmdir, rmdirSync, cp, rmSync } = require("fs");
 const path = require("path");
 const { host, port } = require('../../../api.json');
 
@@ -26,7 +26,7 @@ async function pkg(args) {
                 const baseDir = `./dependencies/${args[1]}`;
                 if (!existsSync(baseDir)) mkdirSync(baseDir, { recursive: true });
 
-                async function downloadFiles(files, basePath) {
+                async function downloadFiles(files) {
                     for (const item of files) {
                         const relativePath = path.relative(find.data.path, item.url);
                         const destinationPath = path.join(baseDir, relativePath);
@@ -60,6 +60,11 @@ async function pkg(args) {
                 await downloadFiles(files, baseDir);
 
                 console.log('Descarga completa');
+
+                cp(path.join(__dirname, `../../../dependencies/${args[1]}/${find.data.actualVersion}`), path.join(__dirname, `../../../dependencies/${args[1]}/`), { recursive: true }, (error) => {
+                    if (error) return console.log(error);
+                    rmSync(path.join(__dirname, `../../../dependencies/${args[1]}/${find.data.actualVersion}`), { recursive: true });
+                });
 
             } catch (error) {
                 console.error('Error:', error.message);
