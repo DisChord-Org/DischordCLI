@@ -1,10 +1,7 @@
-const axios = require("axios");
-const { readdirSync, createWriteStream, existsSync, mkdirSync, cpSync, rmdir, rmdirSync, cp, rmSync, readFileSync, statSync } = require("fs");
+const { readdirSync } = require("fs");
 const path = require("path");
-const { host, port } = require('../../../api.json');
-const openpgp = require('openpgp');
-const { createHash } = require("crypto");
 const install = require("./install");
+const uninstall = require("./uninstall");
 
 async function pkg(args) {
     switch (args[0]) {
@@ -13,6 +10,7 @@ async function pkg(args) {
             break;
 
         case 'uninstall':
+            uninstall(args);
             break;
 
         case 'list':
