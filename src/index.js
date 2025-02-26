@@ -14,7 +14,7 @@ program.command('version').addArgument('update').description('Gestión de versi�
   commands.version(args);
 });
 
-program.command('pkg').addArgument('install').argument('version', 'La versión a gestionar').addArgument('uninstall').description('Gestiona paquetes de DisChord').action(() => {
+program.name('pkg').addArgument('install <dependency> [version]').addArgument('uninstall <dependency>').addArgument('list', { isDefault: true }).description('Gestiona paquetes de DisChord').action(() => {
   commands.pkg(args);
 });
 
