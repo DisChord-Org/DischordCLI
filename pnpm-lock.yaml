@@ -34,6 +34,18 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  h:
+    dependencies:
+      seyfert:
+        specifier: ^4.2.2
+        version: 4.2.2
+
+  hastricky:
+    dependencies:
+      seyfert:
+        specifier: ^4.2.2
+        version: 4.2.2
+
 packages:
 
   '@esbuild/aix-ppc64@0.27.3':
@@ -320,6 +332,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  seyfert@4.2.2:
+    resolution: {integrity: sha512-pEVGIFwq4jldZ0aWwKDY2rQvnTlFWrz6bYl5jGTa/dSQo++LpaLMqo4w5MO5iu+u7ZfNR0DgviG4ePwa+tUZNg==}
+
   tsx@4.21.0:
     resolution: {integrity: sha512-5C1sg4USs1lfG0GFb2RLXsdpXqBSEhAaA/0kPL01wxzpMqLILNxIxIOKiILz+cdg/pLnOUxFYOR5yhHU666wbw==}
     engines: {node: '>=18.0.0'}
@@ -556,6 +571,8 @@ snapshots:
   resolve-pkg-maps@1.0.0: {}
 
   semver@7.7.4: {}
+
+  seyfert@4.2.2: {}
 
   tsx@4.21.0:
     dependencies:

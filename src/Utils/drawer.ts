@@ -15,3 +15,7 @@ export function gray(text: string) {
 export function green(text: string) {
     return chalk.greenBright(text);
 }
+
+export function italic(text: string) {
+    return chalk.italic(text);
+}

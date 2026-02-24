@@ -1,8 +1,9 @@
-import { program } from "commander";
+import { Argument, program } from "commander";
 import pkg from '../package.json';
 import Requester from "./Utils/requester";
 import semver from 'semver';
 import { yellow, green, gray } from './Utils/drawer';
+import init from "./Commands/init";
 
 (async () => {
     const version = await Requester.getVersion('cli');
@@ -19,5 +20,11 @@ program
     .description('CLI de DisChord')
     .version(`DisChord CLI v${pkg.version}`, '-v, --version', 'Muestra la versión actual')
     .helpOption('-h, --help', 'Muestra la ayuda del comando');
+
+program
+    .command('init')
+    .description('Inicializa un nuevo proyecto de DisChord')
+    .addArgument(new Argument('<ruta>', 'Ruta donde se creará el proyecto').argRequired())
+    .action((args) => init(args));
 
 program.parse(process.argv);
