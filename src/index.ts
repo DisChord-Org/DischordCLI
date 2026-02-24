@@ -1,14 +1,16 @@
 import { Argument, program } from "commander";
 import pkg from '../package.json';
 import Requester from "./Utils/requester";
-import semver from 'semver';
 import { yellow, green, gray } from './Utils/drawer';
+import { updateAvailable } from "./Utils/utils";
 import init from "./Commands/init";
+import update from "./Commands/update";
+import './Utils/homedir';
 
 (async () => {
     const version = await Requester.getVersion('cli');
 
-    if (semver.gt(version.version, pkg.version)) {
+    if (updateAvailable(version.version, pkg.version) === 'update-available') {
         console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + version.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
     }
 
@@ -26,5 +28,15 @@ program
     .description('Inicializa un nuevo proyecto de DisChord')
     .addArgument(new Argument('<ruta>', 'Ruta donde se creará el proyecto').argRequired())
     .action((args) => init(args));
+
+program
+    .command('update')
+    .description('Actualiza la CLI, IDE, Compilador o todo.')
+    .addArgument(
+        new Argument('<componente>', 'Componente a actualizar (cli, ide, compiler, all)')
+            .choices([ 'cli', 'ide', 'compiler', 'all' ])
+            .argRequired()
+    )
+    .action((args) => update(args));
 
 program.parse(process.argv);
