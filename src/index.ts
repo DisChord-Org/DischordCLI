@@ -10,7 +10,7 @@ import './Utils/homedir';
 (async () => {
     const version = await Requester.getVersion('cli');
 
-    if (updateAvailable(version.version, pkg.version) === 'update-available') {
+    if (updateAvailable(pkg.version, version.version) === 'update-available') {
         console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + version.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
     }
 
