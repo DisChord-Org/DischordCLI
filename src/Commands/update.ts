@@ -8,6 +8,7 @@ import pkg from '../../package.json';
 import homedir from '../Utils/homedir';
 
 async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: string, binPath: string, folder: string) {
+    fs.unlinkSync(binPath);
     await Requester.downloadComponent(component, version, binPath);
     fs.writeFileSync(path.join(folder, 'version'), version, 'utf-8');
     console.log(green('Actualización completada.'));
@@ -16,9 +17,18 @@ async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: 
 export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
     switch (arg) {
         case 'cli':
+            return console.log(red('CLI aún no está disponible.'));
+
+            const CLIVersion = await Requester.getVersion('cli');
+
+            if (!fs.existsSync(homedir._DisChordCLIFolder)) {
+                console.log(red('No existe el ejecutable de la CLI en este sistema. Instalando...'));
+                await updateComponent('cli', CLIVersion.version, homedir._DisChordCLIPath, homedir._DisChordCLIFolder);
+                return;
+            }
+
             // en el caso de linux se puede sobreescribir el binerio directamente
             // en el caso de windows se moverá el binario actual a 'bin'.old y el nuevo a 'bin'
-            const CLIVersion = await Requester.getVersion('cli');
 
             if (updateAvailable(pkg.version, CLIVersion.version) === 'update-available') {
 
@@ -27,27 +37,33 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
         case 'compiler':
             const CompilerVersion = await Requester.getVersion('compiler');
 
-            if (!fs.existsSync(homedir._DisChordBinPath)) {
+            if (!fs.existsSync(homedir._DisChordCompilerPath)) {
                 console.log(red('No existe el compilador en este sistema. Instalando...'));
-                updateComponent('compiler', CompilerVersion.version, homedir._DisChordBinPath, homedir._DisChordBinFolder);
+                await updateComponent('compiler', CompilerVersion.version, homedir._DisChordCompilerPath, homedir._DisChordCompilerFolder);
                 return;
             }
 
-            if (!fs.existsSync(path.join(homedir._DisChordBinFolder, 'version'))) {
+            if (!fs.existsSync(path.join(homedir._DisChordCompilerFolder, 'version'))) {
                 console.log(red('No se puede obtener la versión instalada, se requiere actualizar'));
-                updateComponent('compiler', CompilerVersion.version, homedir._DisChordBinPath, homedir._DisChordBinFolder);
+                await updateComponent('compiler', CompilerVersion.version, homedir._DisChordCompilerPath, homedir._DisChordCompilerFolder);
                 return;
             }
 
             if (updateAvailable(pkg.version, CompilerVersion.version) === 'update-available') {
                 console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CompilerVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
-                updateComponent('compiler', CompilerVersion.version, homedir._DisChordBinPath, homedir._DisChordBinFolder);
+                await updateComponent('compiler', CompilerVersion.version, homedir._DisChordCompilerPath, homedir._DisChordCompilerFolder);
             } else console.log(green('Todo a la orden del día.'));
             break;
         case 'ide':
+            console.log(red('IDE aún no está disponible.'));
             break;
         case 'all':
-            const versions = await Requester.getAllVersions();
+            console.log(yellow('────────') + '    Comprobando CLI     ' + yellow('────────'));
+            await update('cli');
+            console.log(yellow('────────') + ' Comprobando Compilador ' + yellow('────────'));
+            await update('compiler');
+            console.log(yellow('────────') + '    Comprobando IDE     ' + yellow('────────'));
+            await update('ide');
             break;
     }
 }
