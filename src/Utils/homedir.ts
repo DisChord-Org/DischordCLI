@@ -11,9 +11,9 @@ class homedir {
 
     constructor () {
         if (Commander.isWindows) {
-            this._DisChordBinFolder = path.join(this._homedir, '.dischord', 'bin');
+            this._DisChordBinFolder = path.join(this._homedir, '.dischord', 'bin', 'DisChordCompiler');
         } else {
-            this._DisChordBinFolder = path.join(this._homedir, '.local', 'bin');
+            this._DisChordBinFolder = path.join(this._homedir, '.local', 'bin', 'DisChordCompiler');
         }
 
         if (!fs.existsSync(this._DisChordBinFolder)) {
@@ -22,7 +22,7 @@ class homedir {
             console.log(yellow('SOLUCIONADO: ') + red('Carpeta de DisChord CLI creada en: ') + gray(this._DisChordBinFolder));
         }
 
-        this._DisChordBinPath = path.join(this._DisChordBinFolder, 'chord');
+        this._DisChordBinPath = path.join(this._DisChordBinFolder, 'dischord_compilder');
     }
 }
 

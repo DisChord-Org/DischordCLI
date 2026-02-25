@@ -7,6 +7,12 @@ import { updateAvailable } from "../Utils/utils";
 import pkg from '../../package.json';
 import homedir from '../Utils/homedir';
 
+async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: string, binPath: string, folder: string) {
+    await Requester.downloadComponent(component, version, binPath);
+    fs.writeFileSync(path.join(folder, 'version'), version, 'utf-8');
+    console.log(green('Actualización completada.'));
+}
+
 export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
     switch (arg) {
         case 'cli':
@@ -22,12 +28,20 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
             const CompilerVersion = await Requester.getVersion('compiler');
 
             if (!fs.existsSync(homedir._DisChordBinPath)) {
-                console.log(red('No existe el compilador en este sistema. Actualizando...'));
-                Requester.downloadComponent('compiler', 'latest', homedir._DisChordBinPath);
+                console.log(red('No existe el compilador en este sistema. Instalando...'));
+                updateComponent('compiler', CompilerVersion.version, homedir._DisChordBinPath, homedir._DisChordBinFolder);
+                return;
+            }
+
+            if (!fs.existsSync(path.join(homedir._DisChordBinFolder, 'version'))) {
+                console.log(red('No se puede obtener la versión instalada, se requiere actualizar'));
+                updateComponent('compiler', CompilerVersion.version, homedir._DisChordBinPath, homedir._DisChordBinFolder);
+                return;
             }
 
             if (updateAvailable(pkg.version, CompilerVersion.version) === 'update-available') {
-                Requester.downloadComponent('compiler', 'latest', homedir._DisChordBinPath);
+                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CompilerVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
+                updateComponent('compiler', CompilerVersion.version, homedir._DisChordBinPath, homedir._DisChordBinFolder);
             } else console.log(green('Todo a la orden del día.'));
             break;
         case 'ide':
