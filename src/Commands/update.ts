@@ -1,5 +1,5 @@
 import Commander from "../Utils/commander";
-import fs, { existsSync } from 'fs'
+import fs from 'fs'
 import { gray, green, italic, red, yellow } from "../Utils/drawer";
 import Requester from "../Utils/requester";
 import { updateAvailable } from "../Utils/utils";

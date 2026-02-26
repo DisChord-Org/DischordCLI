@@ -2,6 +2,7 @@ import axios from 'axios';
 import apiConfig from '../../api.json';
 import path from 'path';
 import fs from 'fs';
+import commander from './commander';
 
 interface VersionInfo {
     version: string;
@@ -45,9 +46,10 @@ class Requester {
                 fs.mkdirSync(dir, { recursive: true });
             }
 
+            const _os = commander.isWindows? 'windows' : 'linux';
             const response = await axios({
                 method: 'GET',
-                url: `${this.url}/download/${component}/${version}`,
+                url: `${this.url}/download/${component}/${version}/${_os}`,
                 responseType: 'stream',
             });
 
@@ -66,6 +68,8 @@ class Requester {
                 writer.on('close', () => {
                     if (!error) resolve();
                 });
+
+                if (error) throw error;
             });
         } catch (error) {
             throw new Error(`Error al descargar el componente ${component}: ${error}`);
