@@ -28,7 +28,7 @@ async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: 
     console.log(green('Actualización completada.'));
 }
 
-export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
+export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all', options: { force: boolean }) {
     switch (arg) {
         case 'cli':
             return console.log(red('CLI aún no está disponible.'));
@@ -48,7 +48,7 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
             }
 
             const CurrentCLIVersion = fs.readFileSync(homedir.getVersionPath('cli'), 'utf-8');
-            if (updateAvailable(CurrentCLIVersion, CLIVersion.version) === 'update-available') {
+            if (updateAvailable(CurrentCLIVersion, CLIVersion.version) === 'update-available' || options.force) {
                 console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CLIVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
                 await updateComponent('cli', CLIVersion.version, homedir.getBinaryPath('chord'));
             } else console.log(green('Todo a la orden del día.'));
@@ -69,7 +69,7 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
             }
 
             const CurrentCompilerVersion = fs.readFileSync(homedir.getVersionPath('compiler'), 'utf-8');
-            if (updateAvailable(CurrentCompilerVersion, CompilerVersion.version) === 'update-available') {
+            if (updateAvailable(CurrentCompilerVersion, CompilerVersion.version) === 'update-available' || options.force) {
                 console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CompilerVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
                 await updateComponent('compiler', CompilerVersion.version, homedir.getBinaryPath('dischord-compiler'));
             } else console.log(green('Todo a la orden del día.'));
@@ -79,11 +79,11 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
             break;
         case 'all':
             console.log(yellow('────────') + '    Comprobando CLI     ' + yellow('────────'));
-            await update('cli');
+            await update('cli', options);
             console.log(yellow('────────') + ' Comprobando Compilador ' + yellow('────────'));
-            await update('compiler');
+            await update('compiler', options);
             console.log(yellow('────────') + '    Comprobando IDE     ' + yellow('────────'));
-            await update('ide');
+            await update('ide', options);
             break;
     }
 }

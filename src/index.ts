@@ -1,4 +1,4 @@
-import { Argument, program } from "commander";
+import { Argument, Option, program } from "commander";
 import pkg from '../package.json';
 import Requester from "./Utils/requester";
 import { yellow, green, gray } from './Utils/drawer';
@@ -35,11 +35,14 @@ program
     .command('update')
     .description('Actualiza la CLI, IDE, Compilador o todo.')
     .addArgument(
-        new Argument('<componente>', 'Componente a actualizar (cli, ide, compiler, all)')
+        new Argument('<componente>', 'Componente a actualizar')
             .choices([ 'cli', 'ide', 'compiler', 'all' ])
             .argRequired()
     )
-    .action((args) => update(args));
+    .addOption(
+        new Option('-f, --force', 'Forzar actualización ignorando versiones').default(false, 'no forzar')
+    )
+    .action((args, options) => update(args, options));
 
 program
     .command('compile')
