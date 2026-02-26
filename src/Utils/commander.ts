@@ -5,12 +5,13 @@ class Commander {
     static isWindows: boolean = Commander.OS === 'win32';
 
     static run (command: Record<'windows' | 'linux', string | 'same'>, params?: child_process.ExecSyncOptionsWithBufferEncoding) {
-        if (this.isWindows) {
-            if (command.windows === 'same') throw new Error('La propiedad "windows" no puede ser "same" si el sistema operativo es Windows.');
-            child_process.execSync(command.windows, params);
-        } else {
-            child_process.execSync(command.linux === 'same' ? command.windows : command.linux, params);
-        }
+        const cmd = this.isWindows 
+            ? command.windows 
+            : (command.linux === 'same' ? command.windows : command.linux);
+
+        if (cmd === 'same' && this.isWindows) throw new Error('La propiedad "windows" no puede ser "same" en Windows.');
+
+        return child_process.execSync(cmd, params);
     }
 
     static test(command: Record<'windows' | 'linux', string>): boolean {
