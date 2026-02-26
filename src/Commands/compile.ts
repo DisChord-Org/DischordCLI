@@ -19,7 +19,7 @@ export default async function compile (arg: string) {
     if (extension != '.chord') return console.log(red(`Se esperaba una extensión '.chord'`) + '\nSe encontró ' + gray(`'${extension}'`) + '\nEn ' + gray(fileName));
 
     Commander.run({
-        windows: `dischord_compiler ${resolvedPath} --no-run`,
-        linux: `dischord_compiler ${resolvedPath} --no-run`
+        windows: `dischord-compiler ${resolvedPath} --no-run`,
+        linux: `dischord-compiler ${resolvedPath} --no-run`
     });
 }
