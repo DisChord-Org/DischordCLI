@@ -1,13 +1,11 @@
 import Commander from "../Utils/commander";
-import path from "path";
-import fs from 'fs'
+import fs, { existsSync } from 'fs'
 import { gray, green, italic, red, yellow } from "../Utils/drawer";
 import Requester from "../Utils/requester";
 import { updateAvailable } from "../Utils/utils";
-import pkg from '../../package.json';
 import homedir from '../Utils/homedir';
 
-async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: string, binPath: string, folder: string) {
+async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: string, binPath: string) {
     const oldPath = `${binPath}.old`;
 
     // rename exe to exe.old
@@ -24,8 +22,8 @@ async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: 
 
     // deleting and creating version again
     console.log(gray(`Actualizando versión local a v${version}...`));
-    if (fs.existsSync(path.join(folder, version))) fs.unlinkSync(path.join(folder, version));
-    fs.writeFileSync(path.join(folder, 'version'), version, 'utf-8');
+    if (fs.existsSync(homedir.getVersionPath(component))) fs.unlinkSync(homedir.getVersionPath(component));
+    fs.writeFileSync(homedir.getVersionPath(component), version, 'utf-8');
 
     console.log(green('Actualización completada.'));
 }
@@ -37,43 +35,43 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
 
             const CLIVersion = await Requester.getVersion('cli');
 
-            if (!fs.existsSync(homedir._DisChordCLIFolder)) {
+            if (!homedir.existsBinary('chord')) {
                 console.log(red('No existe el ejecutable de la CLI en este sistema. Instalando...'));
-                await updateComponent('cli', CLIVersion.version, homedir._DisChordCLIPath, homedir._DisChordCLIFolder);
+                await updateComponent('cli', CLIVersion.version, homedir.getBinaryPath('chord'));
                 return;
             }
 
-            if (!fs.existsSync(path.join(homedir._DisChordCLIFolder, 'version'))) {
+            if (!homedir.existsVersion('cli')) {
                 console.log(red('No se puede obtener la versión instalada, se requiere actualizar'));
-                await updateComponent('cli', CLIVersion.version, homedir._DisChordCLIPath, homedir._DisChordCLIFolder);
+                await updateComponent('cli', CLIVersion.version, homedir.getBinaryPath('chord'));
                 return;
             }
 
-            if (updateAvailable(pkg.version, CLIVersion.version) === 'update-available') {
+            const CurrentCLIVersion = fs.readFileSync(homedir.getVersionPath('cli'), 'utf-8');
+            if (updateAvailable(CurrentCLIVersion, CLIVersion.version) === 'update-available') {
                 console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CLIVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
-                await updateComponent('cli', CLIVersion.version, homedir._DisChordCLIPath, homedir._DisChordCLIFolder);
+                await updateComponent('cli', CLIVersion.version, homedir.getBinaryPath('chord'));
             } else console.log(green('Todo a la orden del día.'));
             break;
         case 'compiler':
             const CompilerVersion = await Requester.getVersion('compiler');
 
-            if (!fs.existsSync(homedir._DisChordCompilerPath)) {
+            if (!homedir.existsBinary('dischord-compiler')) {
                 console.log(red('No existe el compilador en este sistema. Instalando...'));
-                await updateComponent('compiler', CompilerVersion.version, homedir._DisChordCompilerPath, homedir._DisChordCompilerFolder);
+                await updateComponent('compiler', CompilerVersion.version, homedir.getBinaryPath('dischord-compiler'));
                 return;
             }
 
-            if (!fs.existsSync(path.join(homedir._DisChordCompilerFolder, 'version'))) {
+            if (!homedir.existsVersion('compiler')) {
                 console.log(red('No se puede obtener la versión instalada, se requiere actualizar'));
-                await updateComponent('compiler', CompilerVersion.version, homedir._DisChordCompilerPath, homedir._DisChordCompilerFolder);
+                await updateComponent('compiler', CompilerVersion.version, homedir.getBinaryPath('dischord-compiler'));
                 return;
             }
 
-            const CurrentCompilerVersion = fs.existsSync(path.join(homedir._DisChordCompilerFolder, 'version'))? fs.readFileSync(path.join(homedir._DisChordCompilerFolder, 'version'), 'utf-8') : '0.0.0';
-
+            const CurrentCompilerVersion = fs.readFileSync(homedir.getVersionPath('compiler'), 'utf-8');
             if (updateAvailable(CurrentCompilerVersion, CompilerVersion.version) === 'update-available') {
                 console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CompilerVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
-                await updateComponent('compiler', CompilerVersion.version, homedir._DisChordCompilerPath, homedir._DisChordCompilerFolder);
+                await updateComponent('compiler', CompilerVersion.version, homedir.getBinaryPath('dischord-compiler'));
             } else console.log(green('Todo a la orden del día.'));
             break;
         case 'ide':
