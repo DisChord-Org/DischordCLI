@@ -5,6 +5,7 @@ import { yellow, green, gray } from './Utils/drawer';
 import { updateAvailable } from "./Utils/utils";
 import init from "./Commands/init";
 import update from "./Commands/update";
+import compile from "./Commands/compile";
 import './Utils/homedir';
 
 (async () => {
@@ -38,5 +39,11 @@ program
             .argRequired()
     )
     .action((args) => update(args));
+
+program
+    .command('compile')
+    .description('Compila un fichero .chord')
+    .addArgument(new Argument('<ruta>', 'Ruta del proyecto').argRequired())
+    .action((args) => compile(args));
 
 program.parse(process.argv);
