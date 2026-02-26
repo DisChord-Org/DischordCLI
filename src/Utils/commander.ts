@@ -11,7 +11,17 @@ class Commander {
 
         if (cmd === 'same' && this.isWindows) throw new Error('La propiedad "windows" no puede ser "same" en Windows.');
 
-        return child_process.execSync(cmd, params);
+        try {
+            return child_process.execSync(cmd, params);
+        } catch (e: any) {
+            // ctrl+c error code: 3221225786 (windows)
+            // ctrl+c error code: 130 (linux)
+            if (e.status === 3221225786 || e.status === 130) {
+                process.exit(0); 
+            }
+
+            throw e;
+        }
     }
 
     static test(command: Record<'windows' | 'linux', string>): boolean {

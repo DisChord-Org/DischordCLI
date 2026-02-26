@@ -21,14 +21,14 @@ export default function init (arg: string) {
     // Iniciando proyecto con pnpm
     Commander.run({
         windows: `cd ${projectPath} && pnpm init`,
-        linux: `cd ${projectPath} && pnpm init`
+        linux: 'same'
     });
     console.log(green('+') + ` node_modules`);
 
     // Instalando Seyfert
     Commander.run({
         windows: `cd ${projectPath} && pnpm install seyfert`,
-        linux: `cd ${projectPath} && pnpm install seyfert`
+        linux: 'same'
     });
     console.log(green('+') + ` seyfert`);
 

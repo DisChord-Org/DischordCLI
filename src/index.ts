@@ -6,6 +6,7 @@ import { updateAvailable } from "./Utils/utils";
 import init from "./Commands/init";
 import update from "./Commands/update";
 import compile from "./Commands/compile";
+import run from "./Commands/run";
 import './Utils/homedir';
 
 (async () => {
@@ -45,5 +46,11 @@ program
     .description('Compila un fichero .chord')
     .addArgument(new Argument('<ruta>', 'Ruta del proyecto').argRequired())
     .action((args) => compile(args));
+
+program
+    .command('run')
+    .description('Ejecuta un proyecto de DisChord')
+    .addArgument(new Argument('<ruta>', 'Ruta del proyecto').argRequired())
+    .action((args) => run(args));
 
 program.parse(process.argv);
