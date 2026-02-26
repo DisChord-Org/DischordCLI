@@ -31,8 +31,6 @@ async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: 
 export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all', options: { force: boolean }) {
     switch (arg) {
         case 'cli':
-            return console.log(red('CLI aún no está disponible.'));
-
             const CLIVersion = await Requester.getVersion('cli');
 
             if (!homedir.existsBinary('chord')) {
