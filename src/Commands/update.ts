@@ -8,9 +8,25 @@ import pkg from '../../package.json';
 import homedir from '../Utils/homedir';
 
 async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: string, binPath: string, folder: string) {
-    fs.unlinkSync(binPath);
+    const oldPath = `${binPath}.old`;
+
+    // rename exe to exe.old
+    if (Commander.isWindows && fs.existsSync(binPath)) {
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        fs.renameSync(binPath, oldPath);
+    } else if (fs.existsSync(binPath)) {
+        fs.unlinkSync(binPath);
+    }
+
+    // downloading
+    console.log(gray(`Descargando ${component} v${version}...`));
     await Requester.downloadComponent(component, version, binPath);
+
+    // deleting and creating version again
+    console.log(gray(`Actualizando versión local a v${version}...`));
+    if (fs.existsSync(path.join(folder, version))) fs.unlinkSync(path.join(folder, version));
     fs.writeFileSync(path.join(folder, 'version'), version, 'utf-8');
+
     console.log(green('Actualización completada.'));
 }
 
@@ -27,11 +43,15 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
                 return;
             }
 
-            // en el caso de linux se puede sobreescribir el binerio directamente
-            // en el caso de windows se moverá el binario actual a 'bin'.old y el nuevo a 'bin'
+            if (!fs.existsSync(path.join(homedir._DisChordCLIFolder, 'version'))) {
+                console.log(red('No se puede obtener la versión instalada, se requiere actualizar'));
+                await updateComponent('cli', CLIVersion.version, homedir._DisChordCLIPath, homedir._DisChordCLIFolder);
+                return;
+            }
 
             if (updateAvailable(pkg.version, CLIVersion.version) === 'update-available') {
-
+                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CLIVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
+                await updateComponent('cli', CLIVersion.version, homedir._DisChordCLIPath, homedir._DisChordCLIFolder);
             } else console.log(green('Todo a la orden del día.'));
             break;
         case 'compiler':
@@ -49,7 +69,9 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all') {
                 return;
             }
 
-            if (updateAvailable(pkg.version, CompilerVersion.version) === 'update-available') {
+            const CurrentCompilerVersion = fs.existsSync(path.join(homedir._DisChordCompilerFolder, 'version'))? fs.readFileSync(path.join(homedir._DisChordCompilerFolder, 'version'), 'utf-8') : '0.0.0';
+
+            if (updateAvailable(CurrentCompilerVersion, CompilerVersion.version) === 'update-available') {
                 console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CompilerVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
                 await updateComponent('compiler', CompilerVersion.version, homedir._DisChordCompilerPath, homedir._DisChordCompilerFolder);
             } else console.log(green('Todo a la orden del día.'));
