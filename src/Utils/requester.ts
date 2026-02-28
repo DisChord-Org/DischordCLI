@@ -1,5 +1,5 @@
 import axios from 'axios';
-import apiConfig from '../../api.json';
+import apiConfig from './config';
 import path from 'path';
 import fs from 'fs';
 import commander from './commander';
@@ -67,6 +67,14 @@ class Requester {
 
                 writer.on('close', () => {
                     if (!error) resolve();
+
+                    if (_os === 'linux') {
+                        try {
+                            fs.chmodSync(finalPath, 0o755);
+                        } catch (chmodError) {
+                            return reject(new Error(`Error al dar permisos de ejecuión al binario: ${chmodError}`));
+                        }
+                    }
                 });
 
                 if (error) throw error;
