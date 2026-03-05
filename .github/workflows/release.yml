@@ -1,4 +1,4 @@
-name: "Publish Compiler Release"
+name: "Publish Chord CLI Release"
 
 on:
   push:
@@ -31,7 +31,8 @@ jobs:
           [[ "$RAW_ARCH" == "arm64" || "$RAW_ARCH" == "aarch64" ]] && ARCH_NAME="aarch64" || ARCH_NAME="x86_64"
           [ "${{ matrix.platform }}" = "windows-latest" ] && EXT=".exe" || EXT=""
           
-          FILENAME="dischord-compiler-$ARCH_NAME-${{ matrix.target-name }}$EXT"
+          FILENAME="chord-$ARCH_NAME-${{ matrix.target-name }}$EXT"
+          
           bun install
           bun build ./src/index.ts --compile --outfile "./dist/$FILENAME"
 
@@ -58,7 +59,7 @@ jobs:
         with:
           files: all-binaries/*
           tag_name: ${{ github.ref_name }}
-          name: "Compiler Release ${{ github.ref_name }}"
+          name: "Chord CLI Release ${{ github.ref_name }}"
           draft: false
           prerelease: false
         env:
