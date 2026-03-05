@@ -1,0 +1,65 @@
+name: "Publish Compiler Release"
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest"
+            target-name: "apple-darwin"
+          - platform: "ubuntu-latest"
+            target-name: "unknown-linux-gnu"
+          - platform: "windows-latest"
+            target-name: "pc-windows-msvc"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+
+      - name: Build Binary
+        shell: bash
+        run: |
+          mkdir -p dist
+          RAW_ARCH=$(uname -m)
+          [[ "$RAW_ARCH" == "arm64" || "$RAW_ARCH" == "aarch64" ]] && ARCH_NAME="aarch64" || ARCH_NAME="x86_64"
+          [ "${{ matrix.platform }}" = "windows-latest" ] && EXT=".exe" || EXT=""
+          
+          FILENAME="dischord-compiler-$ARCH_NAME-${{ matrix.target-name }}$EXT"
+          bun install
+          bun build ./src/index.ts --compile --outfile "./dist/$FILENAME"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.platform }}
+          path: dist/*
+
+  publish-release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-binaries
+          merge-multiple: true
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: all-binaries/*
+          tag_name: ${{ github.ref_name }}
+          name: "Compiler Release ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
