@@ -19,7 +19,14 @@ class Requester {
     }
 
     static async getVersions(): Promise<Versions> {
-        return await this.get(`/versions`) as Versions;
+        const versions = await this.get(`/versions`) as Versions;
+        
+        const cleanVersions = Object.entries(versions).reduce((acc, [key, value]) => {
+            acc[key as keyof Versions] = typeof value === 'string' ? value.replace(/^v/, '') : value;
+            return acc;
+        }, {} as Versions);
+
+        return cleanVersions;
     }
 
     static async downloadComponent(
@@ -38,7 +45,7 @@ class Requester {
 
             const response = await axios({
                 method: 'GET',
-                url: `${this.url}/download/${component}/${version}`,
+                url: `${this.url}/download/${component}/v${version}`,
                 responseType: 'stream',
             });
 
