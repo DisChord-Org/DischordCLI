@@ -5,7 +5,7 @@ import Requester from "../Utils/requester";
 import { updateAvailable } from "../Utils/utils";
 import homedir from '../Utils/homedir';
 
-async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: string, binPath: string) {
+async function updateComponent (component: 'cli' | 'compiler', version: string, binPath: string) {
     const oldPath = `${binPath}.old`;
 
     // rename exe to exe.old
@@ -29,59 +29,52 @@ async function updateComponent (component: 'cli' | 'ide' | 'compiler', version: 
 }
 
 export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all', options: { force: boolean }) {
+    const versions = await Requester.getVersions();
+
     switch (arg) {
         case 'cli':
-            const CLIVersion = await Requester.getVersion('cli');
-
             if (!homedir.existsBinary('chord')) {
                 console.log(red('No existe el ejecutable de la CLI en este sistema. Instalando...'));
-                await updateComponent('cli', CLIVersion.version, homedir.getBinaryPath('chord'));
+                await updateComponent('cli', versions.cli, homedir.getBinaryPath('chord'));
                 return;
             }
 
             if (!homedir.existsVersion('cli')) {
                 console.log(red('No se puede obtener la versión instalada, se requiere actualizar'));
-                await updateComponent('cli', CLIVersion.version, homedir.getBinaryPath('chord'));
+                await updateComponent('cli', versions.cli, homedir.getBinaryPath('chord'));
                 return;
             }
 
             const CurrentCLIVersion = fs.readFileSync(homedir.getVersionPath('cli'), 'utf-8');
-            if (updateAvailable(CurrentCLIVersion, CLIVersion.version) === 'update-available' || options.force) {
-                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CLIVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
-                await updateComponent('cli', CLIVersion.version, homedir.getBinaryPath('chord'));
+            if (updateAvailable(CurrentCLIVersion, versions.cli) === 'update-available' || options.force) {
+                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + versions.cli)}.\n${gray('Por favor, actualiza tu CLI.')}`);
+                await updateComponent('cli', versions.cli, homedir.getBinaryPath('chord'));
             } else console.log(green('Todo a la orden del día.'));
             break;
         case 'compiler':
-            const CompilerVersion = await Requester.getVersion('compiler');
-
             if (!homedir.existsBinary('dischord-compiler')) {
                 console.log(red('No existe el compilador en este sistema. Instalando...'));
-                await updateComponent('compiler', CompilerVersion.version, homedir.getBinaryPath('dischord-compiler'));
+                await updateComponent('compiler', versions.compiler, homedir.getBinaryPath('dischord-compiler'));
                 return;
             }
 
             if (!homedir.existsVersion('compiler')) {
                 console.log(red('No se puede obtener la versión instalada, se requiere actualizar'));
-                await updateComponent('compiler', CompilerVersion.version, homedir.getBinaryPath('dischord-compiler'));
+                await updateComponent('compiler', versions.compiler, homedir.getBinaryPath('dischord-compiler'));
                 return;
             }
 
             const CurrentCompilerVersion = fs.readFileSync(homedir.getVersionPath('compiler'), 'utf-8');
-            if (updateAvailable(CurrentCompilerVersion, CompilerVersion.version) === 'update-available' || options.force) {
-                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + CompilerVersion.version)}.\n${gray('Por favor, actualiza tu CLI.')}`);
-                await updateComponent('compiler', CompilerVersion.version, homedir.getBinaryPath('dischord-compiler'));
+            if (updateAvailable(CurrentCompilerVersion, versions.compiler) === 'update-available' || options.force) {
+                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + versions.compiler)}.\n${gray('Por favor, actualiza tu CLI.')}`);
+                await updateComponent('compiler', versions.compiler, homedir.getBinaryPath('dischord-compiler'));
             } else console.log(green('Todo a la orden del día.'));
-            break;
-        case 'ide':
-            console.log(red('IDE aún no está disponible.'));
             break;
         case 'all':
             console.log(yellow('────────') + '    Comprobando CLI     ' + yellow('────────'));
             await update('cli', options);
             console.log(yellow('────────') + ' Comprobando Compilador ' + yellow('────────'));
             await update('compiler', options);
-            console.log(yellow('────────') + '    Comprobando IDE     ' + yellow('────────'));
-            await update('ide', options);
             break;
     }
 }

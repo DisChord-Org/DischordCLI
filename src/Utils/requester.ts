@@ -4,10 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import commander from './commander';
 
-interface VersionInfo {
-    version: string;
-    critical: boolean;
-}
+type Versions = Record<'compiler' | 'cli' | 'ide', string>;
 
 class Requester {
     static url: string = `${apiConfig.host}`;
@@ -21,15 +18,8 @@ class Requester {
         }
     }
 
-    static async getVersion(release: 'compiler' | 'cli' | 'ide'): Promise<VersionInfo> {
-        return await this.get(`/version/${release}`) as VersionInfo;
-    }
-
-    static async getAllVersions(): Promise<VersionInfo[]> {
-        const request: { versions: VersionInfo[] } | undefined = await this.get('/version/all');
-
-        if (!request) return [];
-        return request.versions;
+    static async getVersions(): Promise<Versions> {
+        return await this.get(`/versions`) as Versions;
     }
 
     static async downloadComponent(
