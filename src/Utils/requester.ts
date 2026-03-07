@@ -23,7 +23,7 @@ class Requester {
     }
 
     static async downloadComponent(
-        component: 'compiler' | 'cli' | 'ide',
+        component: 'compiler' | 'cli',
         version: string,
         outputPath: string
     ): Promise<void> {
@@ -36,10 +36,9 @@ class Requester {
                 fs.mkdirSync(dir, { recursive: true });
             }
 
-            const _os = commander.isWindows? 'windows' : 'linux';
             const response = await axios({
                 method: 'GET',
-                url: `${this.url}/download/${component}/${version}/${_os}`,
+                url: `${this.url}/download/${component}/${version}`,
                 responseType: 'stream',
             });
 
@@ -58,7 +57,7 @@ class Requester {
                 writer.on('close', () => {
                     if (!error) resolve();
 
-                    if (_os === 'linux') {
+                    if (!commander.isWindows) {
                         try {
                             fs.chmodSync(finalPath, 0o755);
                         } catch (chmodError) {
