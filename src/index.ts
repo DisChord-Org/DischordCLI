@@ -5,6 +5,9 @@ import update from "./Commands/update";
 import compile from "./Commands/compile";
 import run from "./Commands/run";
 import './Utils/homedir';
+import { setupWindowsPath } from "./Utils/utils";
+
+setupWindowsPath();
 
 program
     .name('chord')
