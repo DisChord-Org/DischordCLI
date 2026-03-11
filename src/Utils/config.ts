@@ -1,4 +1,4 @@
 export default {
-    "host": "http://5.78.178.225",
+    "host": "https://api.theindiebrand.es",
     "port": 45350
 }
