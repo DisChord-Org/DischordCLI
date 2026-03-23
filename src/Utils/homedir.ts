@@ -5,8 +5,6 @@ import fs from 'fs';
 import { gray, red, yellow } from './drawer';
 
 class homedir {
-    private isWin: boolean = Commander.isWindows;
-
     public _homedir: string = os.homedir();
     public _DisChordRoot: string = path.join(this._homedir, '.dischord');
     public _BinFolder: string = this._homedir;
@@ -15,7 +13,7 @@ class homedir {
         // bins on:
         // w: ~/.dischord/bin
         // l: ~/.local/bin
-        this._BinFolder = this.isWin
+        this._BinFolder = Commander.isWindows
             ? path.join(this._DisChordRoot, 'bin')
             : path.join(this._homedir, '.local', 'bin');
 
