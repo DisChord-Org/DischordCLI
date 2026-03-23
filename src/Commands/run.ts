@@ -7,7 +7,8 @@ import compile from './compile';
 export default async function run (arg: string) {
     const NodeTest: boolean = Commander.test({
         windows: 'node -v',
-        linux: 'same'
+        linux: 'same',
+        macos: 'same'
     });
 
     if (!NodeTest) {
@@ -31,6 +32,7 @@ export default async function run (arg: string) {
 
     Commander.run({
         windows: `cd "${path.join(dist, '../')}" & node "${indexPath}"`,
-        linux: 'same'
+        linux: 'same',
+        macos: 'same'
     }, { stdio: 'inherit' });
 }

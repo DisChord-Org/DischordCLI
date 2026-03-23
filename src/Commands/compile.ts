@@ -21,6 +21,7 @@ export default async function compile (arg: string) {
 
     Commander.run({
         windows: `${homedir.getBinaryPath('dischord-compiler')} ${resolvedPath} --no-run`,
-        linux: `dischord-compiler ${resolvedPath} --no-run`
+        linux: `dischord-compiler ${resolvedPath} --no-run`,
+        macos: `dischord-compiler ${resolvedPath} --no-run`
     });
 }
