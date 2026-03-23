@@ -7,12 +7,23 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 import Commander from './commander';
 
+/**
+ * Compares two version strings to determine if an update is required.
+ * @param current The version currently installed in the system.
+ * @param latest The latest version available in the remote repository.
+ * @returns {'up-to-date' | 'update-available'} The status of the version comparison.
+ */
 export function updateAvailable(current: string, latest: string): 'up-to-date' | 'update-available' {
     if (semver.eq(current, latest)) return 'up-to-date';
 
     return semver.gt(current, latest)? 'up-to-date' : 'update-available';
 }
 
+/**
+ * Orchestrates the update check process for both the Compiler and the CLI.
+ * It fetches remote versions and compares them against local metadata and package files.
+ * @async
+ */
 export async function checkUpdates() {
     const versions = await Requester.getVersions();
     const CurrentCompilerVersion = fs.readFileSync(homedir.getVersionPath('compiler'), 'utf-8');
@@ -26,6 +37,12 @@ export async function checkUpdates() {
     }
 }
 
+/**
+ * Ensures the DisChord binary folder is present in the Windows User PATH environment variable.
+ * This function uses 'reg query' to read and 'setx' to write to the Windows Registry.
+ * Only executes if the current OS is Windows.
+ * @returns {void}
+ */
 export function setupWindowsPath(): void {
     if (!Commander.isWindows) return;
 
@@ -45,5 +62,7 @@ export function setupWindowsPath(): void {
     }
 }
 
-// Ejecución
+/**
+ * Immediate execution of environment setup.
+ */
 setupWindowsPath();

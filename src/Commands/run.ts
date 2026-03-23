@@ -4,6 +4,14 @@ import { gray, red } from '../Utils/drawer';
 import Commander from '../Utils/commander';
 import compile from './compile';
 
+/**
+ * Orchestrates the full lifecycle of running a DisChord bot: 
+ * Validation, Compilation, and Execution.
+ * It ensures Node.js is available, triggers the compiler, and then launches 
+ * the resulting ESM module from the 'dist' directory.
+ * * @param arg The path to the .chord file or directory to be executed.
+ * @returns {Promise<void>} A promise that resolves when the bot process starts or fails.
+ */
 export default async function run (arg: string) {
     const NodeTest: boolean = Commander.test({
         windows: 'node -v',
@@ -30,6 +38,11 @@ export default async function run (arg: string) {
     const indexPath = path.join(dist, 'index.mjs');
     if (!fs.existsSync(indexPath)) return console.log(red('No se ha encontrado el archivo index.mjs en la carpeta dist.') + '\nSe encontró ' + gray(`'${path.basename(indexPath)}'`) + '\nEn ' + gray(indexPath));
 
+    /**
+     * Final Execution:
+     * Navigates to the project root and executes the compiled JavaScript using Node.js.
+     * Use { stdio: 'inherit' } to allow the bot's logs to appear in the current terminal.
+     */
     Commander.run({
         windows: `cd "${path.join(dist, '../')}" & node "${indexPath}"`,
         linux: 'same',

@@ -5,10 +5,23 @@ import Requester from "../Utils/requester";
 import { updateAvailable } from "../Utils/utils";
 import homedir from '../Utils/homedir';
 
+/**
+ * Internal helper to download and install a specific component.
+ * Handles the replacement of active binaries and version metadata updates.
+ * @param component The target component ('cli' or 'compiler').
+ * @param version The version string to be installed.
+ * @param binPath The absolute destination path for the binary.
+ * @private
+ */
 async function updateComponent (component: 'cli' | 'compiler', version: string, binPath: string) {
     const oldPath = `${binPath}.old`;
 
-    // rename exe to exe.old
+    /**
+     * Windows Binary Replacement Strategy:
+     * Since Windows locks files currently in execution, we rename the existing .exe to .old
+     * to allow the new binary to be written to the original path.
+     * On Unix systems, we simply unlink (delete) the existing file.
+     */
     if (Commander.isWindows && fs.existsSync(binPath)) {
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         fs.renameSync(binPath, oldPath);
@@ -16,11 +29,9 @@ async function updateComponent (component: 'cli' | 'compiler', version: string, 
         fs.unlinkSync(binPath);
     }
 
-    // downloading
     console.log(gray(`Descargando ${component} v${version}...`));
     await Requester.downloadComponent(component, version, binPath);
 
-    // deleting and creating version again
     console.log(gray(`Actualizando versión local a v${version}...`));
     if (fs.existsSync(homedir.getVersionPath(component))) fs.unlinkSync(homedir.getVersionPath(component));
     fs.writeFileSync(homedir.getVersionPath(component), version, 'utf-8');
@@ -28,6 +39,13 @@ async function updateComponent (component: 'cli' | 'compiler', version: string, 
     console.log(green('Actualización completada.'));
 }
 
+/**
+ * Main update orchestrator for DisChord components.
+ * Checks for version availability and triggers the updateComponent logic if needed.
+ * @param arg The scope of the update ('cli', 'compiler', or 'all').
+ * @param options Configuration options, such as 'force' to override version checks.
+ * @returns {Promise<void>}
+ */
 export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all', options: { force: boolean }) {
     const versions = await Requester.getVersions();
 

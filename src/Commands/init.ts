@@ -3,6 +3,13 @@ import path from "path";
 import fs from 'fs'
 import { gray, green, italic, red, yellow } from "../Utils/drawer";
 
+/**
+ * Initializes a new DisChord project structure in the specified directory.
+ * This function handles path resolution, folder creation, and the installation 
+ * of necessary dependencies like Seyfert via pnpm.
+ * * @param arg The path where the project should be initialized (relative or absolute).
+ * @returns {void}
+ */
 export default function init (arg: string) {
     let projectPath: string = arg;
 
@@ -14,11 +21,9 @@ export default function init (arg: string) {
     console.log(yellow('────────') + ' Inicializando proyecto ' + yellow('────────'));
     console.log('   ' + italic(`${gray(projectPath)}\n`));
 
-    // Crear carpeta del proyecto
     fs.mkdirSync(projectPath, { recursive: true });
     console.log(green('+') + ` /${path.basename(projectPath)}`);
     
-    // Iniciando proyecto con pnpm
     Commander.run({
         windows: `cd ${projectPath} && pnpm init`,
         linux: 'same',
@@ -26,7 +31,6 @@ export default function init (arg: string) {
     });
     console.log(green('+') + ` node_modules`);
 
-    // Instalando Seyfert
     Commander.run({
         windows: `cd ${projectPath} && pnpm install seyfert`,
         linux: 'same',
@@ -34,15 +38,12 @@ export default function init (arg: string) {
     });
     console.log(green('+') + ` seyfert`);
 
-    // Creando src
     fs.mkdirSync(path.join(projectPath, 'src'), { recursive: true });
     console.log(green('+') + ` /${path.basename(projectPath)}/src`);
 
-    // Creando index.chord
     fs.writeFileSync(path.join(projectPath, 'src', 'index.chord'), '// Tu código de DisChord aquí\n', 'utf-8');
     console.log(green('+') + ` /${path.basename(projectPath)}/src/index.chord`);
 
-    // Creando .gitignore
     fs.writeFileSync(path.join(projectPath, '.gitignore'), 'node_modules\npackage.json\npnpm-lock.yaml\nseyfert.config.mjs\ndist\n', 'utf-8');
     console.log(green('+') + ` /${path.basename(projectPath)}/.gitignore`);
 

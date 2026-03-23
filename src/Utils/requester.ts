@@ -4,11 +4,25 @@ import path from 'path';
 import fs from 'fs';
 import commander from './commander';
 
+/**
+ * Type representing the version strings for DisChord's core components.
+ */
 type Versions = Record<'compiler' | 'cli' | 'ide', string>;
 
+/**
+ * Utility class responsible for handling network requests to the DisChord API.
+ * It manages component downloads, version checks, and filesystem synchronization.
+ */
 class Requester {
+    /** The base URL for the DisChord API host. */
     static url: string = `${apiConfig.host}`;
 
+    /**
+     * Internal helper to perform GET requests.
+     * @param endpoint The API endpoint to hit.
+     * @returns The response data or undefined if an error occurs.
+     * @private
+     */
     private static async get(endpoint: string) {
         try {
             const response = await axios.get(`${this.url}${endpoint}`);
@@ -18,6 +32,11 @@ class Requester {
         }
     }
 
+    /**
+     * Fetches the latest available versions from the API.
+     * Sanitizes version strings by removing the 'v' prefix if present.
+     * @returns {Promise<Versions>} A promise that resolves to the cleaned versions object.
+     */
     static async getVersions(): Promise<Versions> {
         const versions = await this.get(`/versions`) as Versions;
         
@@ -29,11 +48,15 @@ class Requester {
         return cleanVersions;
     }
 
-    static async downloadComponent(
-        component: 'compiler' | 'cli',
-        version: string,
-        outputPath: string
-    ): Promise<void> {
+    /**
+     * Downloads a specific component binary and saves it to the local filesystem.
+     * Automatically handles directory creation and execution permissions for Unix systems.
+     * @param component The component to download ('compiler' or 'cli').
+     * @param version The target version string (e.g., '1.0.0').
+     * @param outputPath The absolute local path where the binary should be saved.
+     * @throws Error if the download fails or permission assignment fails.
+     */
+    static async downloadComponent(component: 'compiler' | 'cli', version: string, outputPath: string): Promise<void> {
         const finalPath = path.resolve(outputPath);
 
         try {
