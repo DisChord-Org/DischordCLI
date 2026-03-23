@@ -1,13 +1,20 @@
 import child_process from "node:child_process";
 
+export type SONode = 'windows' | 'linux' | 'macos';
+
 class Commander {
     static OS: NodeJS.Platform = process.platform;
     static isWindows: boolean = Commander.OS === 'win32';
+    static isMacOS: boolean = Commander.OS === 'darwin';
 
-    static run (command: Record<'windows' | 'linux', string | 'same'>, params?: child_process.ExecSyncOptionsWithBufferEncoding) {
-        const cmd = this.isWindows 
-            ? command.windows 
-            : (command.linux === 'same' ? command.windows : command.linux);
+    static run (command: Record<SONode, string | 'same'>, params?: child_process.ExecSyncOptionsWithBufferEncoding) {
+        let cmd: string;
+
+        if (this.isWindows) cmd = command.windows;
+        else if (this.isMacOS) {
+            const macStrategy = command.macos || command.linux;
+            cmd = macStrategy === 'same'? command.windows : macStrategy;
+        } else cmd = command.linux === 'same'? command.windows : command.linux;
 
         if (cmd === 'same' && this.isWindows) throw new Error('La propiedad "windows" no puede ser "same" en Windows.');
 
@@ -24,7 +31,7 @@ class Commander {
         }
     }
 
-    static test(command: Record<'windows' | 'linux', string>): boolean {
+    static test(command: Record<SONode, string>): boolean {
         try {
             this.run(command, { stdio: 'ignore' });
             return true;
