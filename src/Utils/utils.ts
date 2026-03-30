@@ -1,10 +1,13 @@
 import semver from 'semver';
-import Requester from './requester';
-import pkg from '../../package.json';
-import { gray, green, red, yellow } from './drawer';
-import homedir from './homedir';
 import fs from 'fs';
 import { execSync } from 'child_process';
+import path from 'path';
+
+import pkg from '../../package.json';
+import { gray, green, red, yellow } from './drawer';
+
+import Requester from './requester';
+import homedir from './homedir';
 import Commander from './commander';
 
 /**
@@ -63,6 +66,42 @@ export function setupWindowsPath(): void {
 }
 
 /**
- * Immediate execution of environment setup.
+ * Ensures the DisChord binary folder is present in the MACOS User PATH environment vairable.
+ * Modifies ~/.zshrc (by default in MacOS) or ~/.bashrc.
+ * @returns {void}
  */
+export function setupUnixPath(): void {
+    if (!Commander.isMacOS) return;
+
+    try {
+        const binFolder = homedir._BinFolder;
+        const exportLine = `export PATH="$PATH:${binFolder}"`;
+        
+        const zshrc = path.join(homedir._homedir, '.zshrc');
+        const bashrc = path.join(homedir._homedir, '.bashrc');
+        const targetFile = fs.existsSync(zshrc) ? zshrc : bashrc;
+
+        /**
+         * Maybe zshrc and bashrc does not exists
+         */
+        if (!fs.existsSync(targetFile)) throw new Error(red('ERROR FATAL: ') + 'No se ha encontrado .zshrc ni .bashrc');
+
+        const currentContent = fs.existsSync(targetFile) ? fs.readFileSync(targetFile, 'utf8') : '';
+
+        if (!currentContent.includes(binFolder)) {
+            fs.appendFileSync(targetFile, `\n# DisChord CLI path\n${exportLine}\n`);
+            
+            console.log(green('Ruta añadida al archivo de configuración de la shell: ') + gray(targetFile));
+            console.log(yellow('IMPORTANTE: ') + 'Para usar los comandos ahora mismo, ejecuta: ' + yellow(`source ${targetFile}`));
+        }
+    } catch (error) {
+        console.error(red('Error al modificar el PATH en Unix:'), error instanceof Error ? error.message : error);
+    }
+}
+
+
+/**
+ * Immediate execution of environment setup.
+*/
 setupWindowsPath();
+setupUnixPath();
