@@ -66,9 +66,14 @@ class Requester {
                 fs.mkdirSync(dir, { recursive: true });
             }
 
+            const os =
+                commander.isWindows? 'windows' :
+                commander.isMacOS? 'macos' :
+                'linux';
+
             const response = await axios({
                 method: 'GET',
-                url: `${this.url}/download/${component}/v${version}`,
+                url: `${this.url}/download/${component}/v${version}/${os}`,
                 responseType: 'stream',
             });
 
