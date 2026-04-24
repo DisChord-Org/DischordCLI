@@ -10,6 +10,16 @@ import commander from './commander';
 type Versions = Record<'compiler' | 'cli' | 'ide', string>;
 
 /**
+ * Metadata for tracking the progress of an active download.
+ * @property {number} total - Total size of the resource in bytes.
+ * @property {number} transferred - Amount of data already downloaded in bytes.
+ */
+interface DownloadProgress {
+    total: number;
+    transferred: number;
+}
+
+/**
  * Utility class responsible for handling network requests to the DisChord API.
  * It manages component downloads, version checks, and filesystem synchronization.
  */
@@ -56,7 +66,12 @@ class Requester {
      * @param outputPath The absolute local path where the binary should be saved.
      * @throws Error if the download fails or permission assignment fails.
      */
-    static async downloadComponent(component: 'compiler' | 'cli', version: string, outputPath: string): Promise<void> {
+    static async downloadComponent(
+        component: 'compiler' | 'cli',
+        version: string,
+        outputPath: string,
+        onProgress?: (progress: DownloadProgress) => void
+    ): Promise<void> {
         const finalPath = path.resolve(outputPath);
 
         try {
@@ -77,11 +92,18 @@ class Requester {
                 responseType: 'stream',
             });
 
+            const totalLength = parseInt(response.headers['content-length'], 10);
             const writer = fs.createWriteStream(finalPath);
+            let transferred = 0;
 
             return new Promise((resolve, reject) => {
                 response.data.pipe(writer);
                 let error: Error | null = null;
+
+                response.data.on('data', (chunk: Buffer) => {
+                    transferred += chunk.length;
+                    if (onProgress) onProgress({ total: totalLength, transferred });
+                });
                 
                 writer.on('error', err => {
                     error = err;

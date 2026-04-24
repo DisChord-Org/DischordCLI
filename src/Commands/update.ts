@@ -1,9 +1,10 @@
 import Commander from "../Utils/commander";
 import fs from 'fs'
-import { gray, green, red, yellow } from "../Utils/drawer";
+import { gray, green, red, yellow, cyan } from "../Utils/drawer";
 import Requester from "../Utils/requester";
-import { updateAvailable } from "../Utils/utils";
+import { printNewVersionAvailableMessage, updateAvailable } from "../Utils/utils";
 import homedir from '../Utils/homedir';
+import * as cliProgress from 'cli-progress';
 
 /**
  * Internal helper to download and install a specific component.
@@ -29,8 +30,26 @@ async function updateComponent (component: 'cli' | 'compiler', version: string, 
         fs.unlinkSync(binPath);
     }
 
-    console.log(gray(`Descargando ${component} v${version}...`));
-    await Requester.downloadComponent(component, version, binPath);
+    const progressBar = new cliProgress.SingleBar({
+        format: `${gray('Descargando')} ${cyan(component)} |` + '{bar}' + `| {percentage}% | {value}/{total} MB`,
+        barCompleteChar: '\u2588',
+        barIncompleteChar: '\u2591',
+        hideCursor: true,
+        stopOnComplete: true,
+        barsize: Math.floor(process.stdout.columns * 0.4) 
+    }, cliProgress.Presets.shades_classic);
+
+    let started = false;
+
+    await Requester.downloadComponent(component, version, binPath, (p) => {
+        if (!started) {
+            progressBar.start(Math.round(p.total / 1024 / 1024), 0);
+            started = true;
+        }
+        progressBar.update(Math.round(p.transferred / 1024 / 1024));
+    });
+
+    progressBar.stop();
 
     console.log(gray(`Actualizando versión local a v${version}...`));
     if (fs.existsSync(homedir.getVersionPath(component))) fs.unlinkSync(homedir.getVersionPath(component));
@@ -65,7 +84,7 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all', o
 
             const CurrentCLIVersion = fs.readFileSync(homedir.getVersionPath('cli'), 'utf-8');
             if (updateAvailable(CurrentCLIVersion, versions.cli) === 'update-available' || options.force) {
-                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + versions.cli)}.\n${gray('Por favor, actualiza tu CLI.')}`);
+                printNewVersionAvailableMessage(versions.cli);
                 await updateComponent('cli', versions.cli, homedir.getBinaryPath('chord'));
             } else console.log(green('Todo a la orden del día.'));
             break;
@@ -84,7 +103,7 @@ export default async function update (arg: 'cli' | 'ide' | 'compiler' | 'all', o
 
             const CurrentCompilerVersion = fs.readFileSync(homedir.getVersionPath('compiler'), 'utf-8');
             if (updateAvailable(CurrentCompilerVersion, versions.compiler) === 'update-available' || options.force) {
-                console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + versions.compiler)}.\n${gray('Por favor, actualiza tu CLI.')}`);
+                printNewVersionAvailableMessage(versions.compiler);
                 await updateComponent('compiler', versions.compiler, homedir.getBinaryPath('dischord-compiler'));
             } else console.log(green('Todo a la orden del día.'));
             break;

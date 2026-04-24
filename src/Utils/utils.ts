@@ -2,9 +2,10 @@ import semver from 'semver';
 import fs from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
+import boxen from 'boxen';
 
 import pkg from '../../package.json';
-import { gray, green, red, yellow } from './drawer';
+import { cyan, gray, green, red, yellow } from './drawer';
 
 import Requester from './requester';
 import homedir from './homedir';
@@ -23,9 +24,31 @@ export function updateAvailable(current: string, latest: string): 'up-to-date' |
 }
 
 /**
+ * Formats and returns a boxed notification for a new version release.
+ * @param version The new version string.
+ */
+export function printNewVersionAvailableMessage(version: string, verbose: boolean = false): void {
+    const message = `Nueva versión disponible: ${gray('v' + version)}${verbose?
+       `\n${yellow('Ejecuta')} ${cyan('chord update all')} ${yellow('to update.')}` : ''
+    }`
+
+    const box = boxen(message, {
+        padding: 1,
+        margin: 1,
+        borderStyle: 'round',
+        borderColor: 'green',
+        dimBorder: false,
+        textAlignment: 'center'
+    });
+
+    console.log(box);
+}
+
+/**
  * Orchestrates the update check process for both the Compiler and the CLI.
  * It fetches remote versions and compares them against local metadata and package files.
  * @async
+ * @deprecated
  */
 export async function checkUpdates() {
     const versions = await Requester.getVersions();
