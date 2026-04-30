@@ -38,9 +38,8 @@ class homedir {
      * Verifies if a path exists; if not, creates the required file or directory.
      * @param _path The system path to check.
      * @param type Whether the target should be a 'folder' or a 'file'.
-     * @private
      */
-    private checkPath (_path: string, type: 'folder' | 'file') {
+    public checkPath (_path: string, type: 'folder' | 'file') {
         if (!fs.existsSync(_path)) {
             console.log(yellow('ADVERTENCIA: ') + red(`No se encontró ${type == 'file'? 'el fichero' : 'la carpeta'} en tu sistema. Creando...`));
             if (type === 'file') {
