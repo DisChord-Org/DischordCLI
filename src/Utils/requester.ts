@@ -31,9 +31,8 @@ class Requester {
      * Internal helper to perform GET requests.
      * @param endpoint The API endpoint to hit.
      * @returns The response data or undefined if an error occurs.
-     * @private
      */
-    private static async get(endpoint: string) {
+    public static async get(endpoint: string) {
         try {
             const response = await axios.get(`${this.url}${endpoint}`);
             return response.data;
