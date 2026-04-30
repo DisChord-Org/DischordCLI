@@ -53,3 +53,12 @@ export function cyan (text: string) {
 export function italic(text: string) {
     return chalk.italic(text);
 }
+
+/**
+ * Utility function to apply bold formatting to text for terminal output.
+ * @param text The string to be formatted.
+ * @returns The formatted string with bold ANSI codes.
+ */
+export function bold (text: string) {
+    return chalk.bold(text);
+}
