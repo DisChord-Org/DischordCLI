@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import apiConfig from './config';
 import path from 'path';
 import fs from 'fs';
@@ -32,13 +32,12 @@ class Requester {
      * @param endpoint The API endpoint to hit.
      * @returns The response data or undefined if an error occurs.
      */
-    public static async get(endpoint: string) {
-        try {
-            const response = await axios.get(`${this.url}${endpoint}`);
-            return response.data;
-        } catch (error) {
-            console.error(`Error en la solicitud GET a ${endpoint}:`, error);
-        }
+    public static async get(endpoint: string): Promise<any> {
+        const response = await axios.get(`${this.url}${endpoint}`).catch(() => {
+            return undefined;
+        });
+        
+        return response?.data;
     }
 
     /**
@@ -57,11 +56,52 @@ class Requester {
         return cleanVersions;
     }
 
+    static async downloadFile(
+        fullUrl: string,
+        outputPath: string,
+        onProgress?: (progress: DownloadProgress) => void
+    ): Promise<void> {
+        const finalPath = path.resolve(outputPath);
+        const dir = path.dirname(finalPath);
+
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        try {
+            const response = await axios({
+                method: 'GET',
+                url: fullUrl,
+                responseType: 'stream',
+            });
+
+            const totalLength = parseInt(response.headers['content-length'], 10) || 0;
+            const writer = fs.createWriteStream(finalPath);
+            let transferred = 0;
+
+            return new Promise((resolve, reject) => {
+                response.data.pipe(writer);
+
+                response.data.on('data', (chunk: Buffer) => {
+                    transferred += chunk.length;
+                    if (onProgress) onProgress({ total: totalLength, transferred });
+                });
+
+                writer.on('error', err => {
+                    writer.close();
+                    reject(err);
+                });
+
+                writer.on('close', () => resolve());
+            });
+        } catch (error) {
+            throw new Error(`Fallo en la descarga: ${error}`);
+        }
+    }
+
     /**
      * Downloads a specific component binary and saves it to the local filesystem.
      * Automatically handles directory creation and execution permissions for Unix systems.
      * @param component The component to download ('compiler' or 'cli').
-     * @param version The target version string (e.g., '1.0.0').
+     * @param version The target version string.
      * @param outputPath The absolute local path where the binary should be saved.
      * @throws Error if the download fails or permission assignment fails.
      */
@@ -71,61 +111,21 @@ class Requester {
         outputPath: string,
         onProgress?: (progress: DownloadProgress) => void
     ): Promise<void> {
-        const finalPath = path.resolve(outputPath);
+        const os = commander.isWindows ? 'windows' : commander.isMacOS ? 'macos' : 'linux';
+        const downloadUrl = `${this.url}/download/${component}/v${version}/${os}`;
 
         try {
-            const dir = path.dirname(finalPath);
+            await this.downloadFile(downloadUrl, outputPath, onProgress);
 
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
+            if (!commander.isWindows) {
+                try {
+                    fs.chmodSync(outputPath, 0o755);
+                } catch (chmodError) {
+                    throw new Error(`Error al dar permisos de ejecución: ${chmodError}`);
+                 }
             }
-
-            const os =
-                commander.isWindows? 'windows' :
-                commander.isMacOS? 'macos' :
-                'linux';
-
-            const response = await axios({
-                method: 'GET',
-                url: `${this.url}/download/${component}/v${version}/${os}`,
-                responseType: 'stream',
-            });
-
-            const totalLength = parseInt(response.headers['content-length'], 10);
-            const writer = fs.createWriteStream(finalPath);
-            let transferred = 0;
-
-            return new Promise((resolve, reject) => {
-                response.data.pipe(writer);
-                let error: Error | null = null;
-
-                response.data.on('data', (chunk: Buffer) => {
-                    transferred += chunk.length;
-                    if (onProgress) onProgress({ total: totalLength, transferred });
-                });
-                
-                writer.on('error', err => {
-                    error = err;
-                    writer.close();
-                    reject(err);
-                });
-
-                writer.on('close', () => {
-                    if (!error) resolve();
-
-                    if (!commander.isWindows) {
-                        try {
-                            fs.chmodSync(finalPath, 0o755);
-                        } catch (chmodError) {
-                            return reject(new Error(`Error al dar permisos de ejecuión al binario: ${chmodError}`));
-                        }
-                    }
-                });
-
-                if (error) throw error;
-            });
         } catch (error) {
-            throw new Error(`Error al descargar el componente ${component}: ${error}`);
+            throw new Error(`Error al procesar componente ${component}: ${error}`);
         }
     }
 }
