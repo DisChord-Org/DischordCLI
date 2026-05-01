@@ -2,7 +2,7 @@ import Commander from "../Utils/commander";
 import fs from 'fs'
 import { gray, green, red, yellow, cyan } from "../Utils/drawer";
 import Requester from "../Utils/requester";
-import { printNewVersionAvailableMessage, updateAvailable } from "../Utils/utils";
+import { createDownloadProgressBar, printNewVersionAvailableMessage, updateAvailable } from "../Utils/utils";
 import homedir from '../Utils/homedir';
 import * as cliProgress from 'cli-progress';
 
@@ -30,26 +30,15 @@ async function updateComponent (component: 'cli' | 'compiler', version: string, 
         fs.unlinkSync(binPath);
     }
 
-    const progressBar = new cliProgress.SingleBar({
-        format: `${gray('Descargando')} ${cyan(component)} |` + '{bar}' + `| {percentage}% | {value}/{total} MB`,
-        barCompleteChar: '\u2588',
-        barIncompleteChar: '\u2591',
-        hideCursor: true,
-        stopOnComplete: true,
-        barsize: Math.floor(process.stdout.columns * 0.4) 
-    }, cliProgress.Presets.shades_classic);
+    const { bar, handleProgress } = createDownloadProgressBar(component);
 
-    let started = false;
-
-    await Requester.downloadComponent(component, version, binPath, (p) => {
-        if (!started) {
-            progressBar.start(Math.round(p.total / 1024 / 1024), 0);
-            started = true;
-        }
-        progressBar.update(Math.round(p.transferred / 1024 / 1024));
-    });
-
-    progressBar.stop();
+    try {
+        await Requester.downloadComponent(component, version, binPath, handleProgress);
+        bar.stop();
+    } catch (error) {
+        bar.stop();
+        throw error;
+    }
 
     console.log(gray(`Actualizando versión local a v${version}...`));
     if (fs.existsSync(homedir.getVersionPath(component))) fs.unlinkSync(homedir.getVersionPath(component));
