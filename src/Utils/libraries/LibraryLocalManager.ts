@@ -1,9 +1,8 @@
 import path from 'path';
 import fs from 'fs';
 
-import requester from '../requester';
 import homedir from "../homedir";
-import { PackageResponse, PackagesRecordResponse, RepositoryData, RepositoryDataFromJSON, TrustLevel } from './types';
+import { PackageResponse, PackagesRecordResponse, TrustLevel } from './types';
 import { bold, cyan, gray, green, italic, red } from '../drawer';
 
 class LibraryLocalManager {

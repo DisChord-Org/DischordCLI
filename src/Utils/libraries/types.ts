@@ -40,9 +40,6 @@ interface UnknownRepository extends BaseRepository {
 
 export type RepositoryData = OfficialRepository | TrustRepository | UnknownRepository;
 
-/** Map structure for repository JSON storage. */
-export type RepositoryDataFromJSON = Record<RepositoryData['name'], RepositoryData>;
-
 export interface PackageResponse {
     name: RepositoryData['name'];
     description: RepositoryData['description'];
