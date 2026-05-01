@@ -3,6 +3,7 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 import boxen from 'boxen';
+import cliProgress from 'cli-progress';
 
 import pkg from '../../package.json';
 import { cyan, gray, green, red, yellow } from './drawer';
@@ -32,7 +33,11 @@ export function printNewVersionAvailableMessage(version: string, verbose: boolea
        `\n${yellow('Ejecuta')} ${cyan('chord update all')} ${yellow('to update.')}` : ''
     }`
 
-    const box = boxen(message, {
+    console.log(createBox(message));
+}
+
+export function createBox (message: string): string {
+    return boxen(message, {
         padding: 1,
         margin: 1,
         borderStyle: 'round',
@@ -40,8 +45,6 @@ export function printNewVersionAvailableMessage(version: string, verbose: boolea
         dimBorder: false,
         textAlignment: 'center'
     });
-
-    console.log(box);
 }
 
 /**
@@ -61,6 +64,32 @@ export async function checkUpdates() {
     if (updateAvailable(pkg.version, versions.cli) === 'update-available') {
         console.log(`${green('Hay una nueva versión disponible:')} ${yellow('v' + versions.cli)}.\n${gray('Por favor, actualiza tu CLI.')}`);
     }
+}
+
+export function createDownloadProgressBar(resourceName: string): { bar: cliProgress.SingleBar, handleProgress: any } {
+    const progressBar = new cliProgress.SingleBar({
+        format: `${gray('Descargando')} ${cyan(resourceName)} |` + '{bar}' + `| {percentage}% | {value}/{total} MB`,
+        barCompleteChar: '\u2588',
+        barIncompleteChar: '\u2591',
+        hideCursor: true,
+        stopOnComplete: true,
+        barsize: Math.floor(process.stdout.columns * 0.4) 
+    }, cliProgress.Presets.shades_classic);
+
+    let started = false;
+
+    const handleProgress = (p: { total: number, transferred: number }) => {
+        if (!started) {
+            progressBar.start(Number((p.total / 1024 / 1024).toFixed(2)), 0);
+            started = true;
+        }
+        progressBar.update(Number((p.transferred / 1024 / 1024).toFixed(2)));
+    };
+
+    return {
+        bar: progressBar,
+        handleProgress
+    };
 }
 
 /**
