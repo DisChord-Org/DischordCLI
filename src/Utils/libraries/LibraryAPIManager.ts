@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import * as openpgp from 'openpgp';
 
 import requester from '../requester';
 import { PackageResponse, PackagesRecordResponse } from './types';
+import { PublicKey } from './PublicKey';
 
 /**
  * Interface for interacting with the remote DisChord Package Registry API.
@@ -20,7 +20,7 @@ class LibraryAPIManager {
      * @private
      * @readonly
      */
-    private static readonly DISCHORD_PUBLIC_KEY = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'public.key'), 'utf8');
+    private static readonly DISCHORD_PUBLIC_KEY = PublicKey;
 
     constructor () {}
 

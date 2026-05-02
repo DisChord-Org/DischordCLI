@@ -1,4 +1,4 @@
------BEGIN PGP PUBLIC KEY BLOCK-----
+export const PublicKey: string = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQGNBGnvS18BDACbCMXDxyoZOHaoNGZDren/jYnblTckliw5jfRvDfpDWbdAATF1
 Fm2FV5iFXXK/CwxCA8vZhVMJ4RGFPrTRgDPdlEQA3G1hanXVslS60elvwtmxXZ41
@@ -65,3 +65,4 @@ sW3LLW4zuc5Aa3S99NV2nytDImt9s6zqfJ127Mz85Ob9js2D234teqBPP9ppTHvA
 iytV+m+OBCDCTm4mZhAr0cNlESxs3DuOyQ==
 =txk8
 -----END PGP PUBLIC KEY BLOCK-----
+` as const;
