@@ -33,4 +33,6 @@ class LibraryLocalManager {
     }
 }
 
+new LibraryLocalManager();
+
 export default LibraryLocalManager;

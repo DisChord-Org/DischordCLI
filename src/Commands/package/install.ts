@@ -20,13 +20,11 @@ export default async function pkgInstall(name: string, version: string = 'latest
         return;
     }
 
-    //if version is latest, we should get the upper local version
-    if(LibraryLocalManager.existsRepo(name, version)) return console.log(`\n${bold(green('+ ') + name)} ${gray(version)}\n`);;
-
     console.log(gray(`Buscando ${bold(`${name}@${version}`)} en el registro...`));
     const pkg = await LibraryAPIManager.getPackage(name);
-
+    
     if (!pkg) return console.log(red(`No se encontró el paquete ${bold(name)}.`));
+    if(LibraryLocalManager.existsRepo(name, pkg.version)) return console.log(`\n${bold(green('+ ') + name)} ${gray(pkg.version)}\n`);;
     
     const packageBaseDir = path.join(LibraryLocalManager.LibrariesPath, name, pkg.version);
     const zipPath = path.join(packageBaseDir, `${name}-${pkg.version}.zip`);
