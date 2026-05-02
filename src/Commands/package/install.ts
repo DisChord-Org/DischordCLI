@@ -84,19 +84,21 @@ export default async function pkgInstall(name: string, version: string = 'latest
 
     console.log(gray('Descomprimiendo paquete...'));
     const zip = new admZip(zipPath);
-    const zipEntries = zip.getEntries();
 
-    const rootDir = zipEntries[0].entryName.split('/')[0];
+    const tempDir = path.join(packageBaseDir, '_temp');
+    zip.extractAllTo(tempDir, true);
 
-    zipEntries.forEach(entry => {
-        if (entry.entryName.startsWith(rootDir + '/')) {
-            const targetPath = entry.entryName.substring(rootDir.length + 1);
-            
-            if (targetPath.length > 0) {
-                zip.extractEntryTo(entry.entryName, packageBaseDir, false, true, false, targetPath);
-            }
-        }
+    const entries = fs.readdirSync(tempDir);
+    const realRoot = path.join(tempDir, entries[0]);
+
+    const files = fs.readdirSync(realRoot);
+    files.forEach(file => {
+        const src = path.join(realRoot, file);
+        const dest = path.join(packageBaseDir, file);
+        fs.renameSync(src, dest);
     });
+
+    fs.rmSync(tempDir, { recursive: true, force: true });
 
     console.log(gray('Instalando paquetes dependencias...'));
     Commander.run({
