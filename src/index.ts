@@ -10,6 +10,7 @@ import compile from "./Commands/compile";
 import run from "./Commands/run";
 import pkgInstall from "./Commands/package/install";
 import pkgSearch from "./Commands/package/search";
+import pkgUninstall from "./Commands/package/uninstall";
 
 /**
  * Main Entry Point for the DisChord CLI.
@@ -86,12 +87,13 @@ pkgCommand
     .addArgument(new Argument('[version]', 'Versión específica (por defecto latest)'))
     .action((name, version) => pkgInstall(name, version));
 
-/*pkgCommand
+pkgCommand
     .command('uninstall')
     .description('Elimina una librería globalmente')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
-    .action((name) => uninstallPkg(name));
-*/
+    .addArgument(new Argument('<version>', 'Versión a borrar').argRequired())
+    .action((name, version) => pkgUninstall(name, version));
+
 pkgCommand
     .command('search')
     .description('Busca librerías disponibles en el registro oficial')
