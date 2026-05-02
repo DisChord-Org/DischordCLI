@@ -3,6 +3,17 @@ import fs from 'fs';
 import { red, bold, gray } from "../../Utils/drawer";
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
 
+/**
+ * Permanently removes a specific version of a library from the global storage.
+ * 
+ * This function deletes the version directory within the DisChord global path.
+ * If the library's root folder becomes empty after deletion, it is also removed.
+ * 
+ * @async
+ * @param {string} name - The name of the package to uninstall.
+ * @param {string} version - The specific version tag to remove.
+ * @returns {Promise<void>}
+ */
 export default async function pkgUninstall(name: string, version: string): Promise<void> {
     const packagePath = path.join(LibraryLocalManager.LibrariesPath, name);
 

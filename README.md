@@ -1,1 +1,1 @@
-The CLI for DisChord interpreter.
+The CLI for DisChord transpiler.

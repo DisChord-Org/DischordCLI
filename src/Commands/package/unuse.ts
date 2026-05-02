@@ -3,6 +3,16 @@ import fs from 'fs';
 
 import { red, gray, bold } from "../../Utils/drawer";
 
+/**
+ * Unlinks a library from the current project by removing its symbolic link.
+ * 
+ * This function reverses `pkgUse` by deleting the link in the local `./lib` folder.
+ * If the folder becomes empty, it is also removed to maintain project cleanliness.
+ * 
+ * @async
+ * @param {string} name - The name of the library to unlink.
+ * @returns {Promise<void>}
+ */
 export default async function pkgUnuse(name: string): Promise<void> {
     const projectLibDir = path.join(process.cwd(), 'lib');
     const targetPath = path.join(projectLibDir, name);

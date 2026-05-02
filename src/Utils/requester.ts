@@ -56,6 +56,16 @@ class Requester {
         return cleanVersions;
     }
 
+    /**
+     * Downloads a file from a URL and saves it to the specified output path using streams.
+     * Automatically creates the destination directory if it does not exist.
+     * @async
+     * @param {string} fullUrl - The complete URL of the file to download.
+     * @param {string} outputPath - The local filesystem path where the file will be saved.
+     * @param {Function} [onProgress] - Optional callback to track download progress.
+     * @throws {Error} If the network request fails or there is an error writing to the filesystem.
+     * @returns {Promise<void>}
+     */
     static async downloadFile(
         fullUrl: string,
         outputPath: string,
@@ -97,13 +107,16 @@ class Requester {
         }
     }
 
-    /**
-     * Downloads a specific component binary and saves it to the local filesystem.
-     * Automatically handles directory creation and execution permissions for Unix systems.
-     * @param component The component to download ('compiler' or 'cli').
-     * @param version The target version string.
-     * @param outputPath The absolute local path where the binary should be saved.
-     * @throws Error if the download fails or permission assignment fails.
+/**
+     * Downloads a specific DisChord component binary tailored for the current operating system.
+     * Automatically handles directory creation and assigns execution permissions (0o755) on Unix-based systems.
+     * @async
+     * @param {'compiler' | 'cli'} component - The name of the component to download.
+     * @param {string} version - The target version string.
+     * @param {string} outputPath - The absolute local path where the binary should be saved.
+     * @param {Function} [onProgress] - Optional callback to track the binary's download progress.
+     * @throws {Error} If the download fails or if execution permissions cannot be set on Linux/MacOS.
+     * @returns {Promise<void>}
      */
     static async downloadComponent(
         component: 'compiler' | 'cli',

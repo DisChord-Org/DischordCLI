@@ -12,13 +12,28 @@ import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
 import { red, green, gray, yellow, bold } from "../../Utils/drawer";
 import { createBox, createDownloadProgressBar } from "../../Utils/utils";
 
+/** Regular expression to validate the 'vX.X.X' format. */
 const vRegex = /^v\d+\.\d+\.\d+$/;
 
+/**
+ * Orchestrates the full installation process of a DisChord library.
+ * 
+ * The process includes:
+ * 1. Version format validation.
+ * 2. Remote registry lookup.
+ * 3. Integrity check via PGP signatures (if audited).
+ * 4. User confirmation for unverified packages.
+ * 5. Extraction and cleanup of temporary files.
+ * 6. Dependency installation using pnpm.
+ * 7. Persistence of package metadata in 'data.json'.
+ * 
+ * @async
+ * @param {string} name - The unique name of the package to install.
+ * @param {string} [version='latest'] - The target version tag or 'latest'.
+ * @returns {Promise<void>}
+ */
 export default async function pkgInstall(name: string, version: string = 'latest'): Promise<void> {
-    if (version !== 'latest' && !vRegex.test(version) && !semver.valid(version)) {
-        console.log(red(`El formato de versión "${version}" es inválido. Usa ${bold('vX.X.X')}`));
-        return;
-    }
+    if (version !== 'latest' && !vRegex.test(version) && !semver.valid(version)) return console.log(red(`El formato de versión "${version}" es inválido. Usa ${bold('vX.X.X')}`));
 
     console.log(gray(`Buscando ${bold(`${name}@${version}`)} en el registro...`));
     const pkg = await LibraryAPIManager.getPackage(name);

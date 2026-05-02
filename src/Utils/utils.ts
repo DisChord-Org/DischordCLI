@@ -36,6 +36,11 @@ export function printNewVersionAvailableMessage(version: string, verbose: boolea
     console.log(createBox(message));
 }
 
+/**
+ * Wraps a message string inside a styled CLI box using the boxen library.
+ * @param {string} message The text content to be displayed in the box.
+ * @returns {string} The formatted string with borders and padding.
+ */
 export function createBox (message: string): string {
     return boxen(message, {
         padding: 1,

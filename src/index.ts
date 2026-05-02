@@ -78,10 +78,19 @@ program
     .addArgument(new Argument('<ruta>', 'Ruta del proyecto').argRequired())
     .action((args) => run(args));
 
+/**
+ * Command Group: pkg
+ * Parent command for DisChord package management operations.
+ */
 const pkgCommand = program
     .command('pkg')
     .description('Gestiona las librerías de DisChord');
 
+/**
+ * Subcommand: pkg install
+ * Downloads and installs a DisChord library globally.
+ * Usage: chord pkg install <nombre> [version]
+ */
 pkgCommand
     .command('install')
     .description('Instala una librería de DisChord')
@@ -89,6 +98,11 @@ pkgCommand
     .addArgument(new Argument('[version]', 'Versión específica (por defecto latest)'))
     .action((name, version) => pkgInstall(name, version));
 
+/**
+ * Subcommand: pkg uninstall
+ * Permanently removes a library or a specific version from the global storage.
+ * Usage: chord pkg uninstall <nombre> <version>
+ */
 pkgCommand
     .command('uninstall')
     .description('Elimina una librería globalmente')
@@ -96,6 +110,11 @@ pkgCommand
     .addArgument(new Argument('<version>', 'Versión a borrar').argRequired())
     .action((name, version) => pkgUninstall(name, version));
 
+/**
+ * Subcommand: pkg search
+ * Queries the official registry or local storage for available libraries.
+ * Usage: chord pkg search [query] [-i]
+ */
 pkgCommand
     .command('search')
     .description('Busca librerías disponibles en el registro oficial')
@@ -105,6 +124,12 @@ pkgCommand
     )
     .action((query, options) => pkgSearch(query, options));
 
+/**
+ * Subcommand: pkg use
+ * Creates a symbolic link (junction on Windows) of a specific library version 
+ * into the current project's /lib directory.
+ * Usage: chord pkg use <nombre> <version>
+ */
 pkgCommand
     .command('use')
     .description('Implementa en tu proyecto actual la librería especificada')
@@ -112,6 +137,11 @@ pkgCommand
     .addArgument(new Argument('<version>', 'Versión a la que cambiar').argRequired())
     .action((name, version) => pkgUse(name, version));
 
+/**
+ * Subcommand: pkg unuse
+ * Removes the symbolic link of a library from the current project's /lib directory.
+ * Usage: chord pkg unuse <nombre>
+ */
 pkgCommand
     .command('unuse')
     .description('Elimina de tu proyecto actual la librería especificada')
