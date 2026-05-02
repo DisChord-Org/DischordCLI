@@ -11,17 +11,22 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "adm-zip": "^0.5.17",
     "axios": "^1.7.9",
     "boxen": "^8.0.1",
     "chalk": "^5.4.1",
     "cli-progress": "^3.12.0",
     "commander": "^13.1.0",
-    "semver": "^7.7.4"
+    "openpgp": "^6.3.0",
+    "semver": "^7.7.4",
+    "terminal-kit": "^3.1.2"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
     "@types/cli-progress": "^3.11.6",
     "@types/node": "^25.3.0",
     "@types/semver": "^7.7.1",
+    "@types/terminal-kit": "^2.5.7",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

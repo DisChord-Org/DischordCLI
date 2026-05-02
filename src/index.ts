@@ -1,11 +1,15 @@
 import { Argument, Option, program } from "commander";
+
 import pkg from '../package.json';
+import './Utils/homedir';
+import "./Utils/utils";
+
 import init from "./Commands/init";
 import update from "./Commands/update";
 import compile from "./Commands/compile";
 import run from "./Commands/run";
-import './Utils/homedir';
-import "./Utils/utils";
+import pkgInstall from "./Commands/package/install";
+import pkgSearch from "./Commands/package/search";
 
 /**
  * Main Entry Point for the DisChord CLI.
@@ -71,6 +75,46 @@ program
     .addArgument(new Argument('<ruta>', 'Ruta del proyecto').argRequired())
     .action((args) => run(args));
 
+const pkgCommand = program
+    .command('pkg')
+    .description('Gestiona las librerías de DisChord');
+
+pkgCommand
+    .command('install')
+    .description('Instala una librería de DisChord')
+    .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
+    .addArgument(new Argument('[version]', 'Versión específica (por defecto latest)'))
+    .action((name, version) => pkgInstall(name, version));
+
+/*pkgCommand
+    .command('uninstall')
+    .description('Elimina una librería globalmente')
+    .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
+    .action((name) => uninstallPkg(name));
+*/
+pkgCommand
+    .command('search')
+    .description('Busca librerías disponibles en el registro oficial')
+    .addArgument(new Argument('[query]', 'Término de búsqueda'))
+    .addOption(
+        new Option('-i, --installed', 'Forzar la búsqueda local').default(false, 'no forzar')
+    )
+    .action((query, options) => pkgSearch(query, options));
+/*
+pkgCommand
+    .command('use')
+    .description('Implementa en tu proyecto actual la librería especificada')
+    .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
+    .addArgument(new Argument('<version>', 'Versión a la que cambiar').argRequired())
+    .action((name, version) => usePkg(name, version));
+
+pkgCommand
+    .command('unuse')
+    .description('Elimina de tu proyecto actual la librería especificada')
+    .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
+    .addArgument(new Argument('<version>', 'Versión a la que cambiar').argRequired())
+    .action((name, version) => usePkg(name, version));
+*/
 /**
  * Process the raw command-line arguments provided by the user.
  */

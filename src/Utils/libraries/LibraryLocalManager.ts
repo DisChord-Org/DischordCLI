@@ -16,7 +16,8 @@ class LibraryLocalManager {
         return `+ ${green(`${repo.name} (${repo.version})`)} ${bold('-')} ${italic(gray(repo.description))}\n    - ${cyan(repo.repository)}\n    - ${cyan(TrustLevel[repo.trustLevel])}`;
     }
 
-    public static existsRepo (name: PackageResponse['name']): boolean {
+    public static existsRepo (name: PackageResponse['name'], version: PackageResponse['version'] | undefined = undefined): boolean {
+        if (version) return fs.existsSync(path.join(LibraryLocalManager.LibrariesPath, name, version));
         return fs.existsSync(path.join(LibraryLocalManager.LibrariesPath, name));
     }
 

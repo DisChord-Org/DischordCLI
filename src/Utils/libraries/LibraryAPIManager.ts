@@ -1,14 +1,12 @@
-import path from 'path';
 import fs from 'fs';
-import crypto from 'crypto';
+import path from 'path';
+import * as openpgp from 'openpgp';
 
 import requester from '../requester';
-import homedir from "../homedir";
-import { PackageResponse, PackagesRecordResponse, RepositoryData } from './types';
-import { spawn } from 'child_process';
+import { PackageResponse, PackagesRecordResponse } from './types';
 
 class LibraryAPIManager {
-    private static readonly DISCHORD_PUBLIC_KEY = '';
+    private static readonly DISCHORD_PUBLIC_KEY = fs.readFileSync(path.join(process.cwd(), 'public.key'), 'utf8');
 
     constructor () {}
 
@@ -25,16 +23,21 @@ class LibraryAPIManager {
     public static async verifySignature(filePath: string, signatureBase64: string): Promise<boolean> {
         try {
             const fileBuffer = fs.readFileSync(filePath);
+            const publicKey = await openpgp.readKey({ armoredKey: this.DISCHORD_PUBLIC_KEY });
+            const signature = await openpgp.readSignature({ armoredSignature: signatureBase64.replace(/\\n/g, '\n').trim() });
+            const message = await openpgp.createMessage({ binary: new Uint8Array(fileBuffer) });
 
-            return crypto.verify(
-                'sha256',
-                fileBuffer,
-                {
-                    key: this.DISCHORD_PUBLIC_KEY,
-                    padding: crypto.constants.RSA_PKCS1_PSS_PADDING
-                },
-                Buffer.from(signatureBase64, 'base64')
-            );
+            const verification = await openpgp.verify({
+                message,
+                signature,
+                verificationKeys: publicKey,
+                format: 'binary'
+            });
+
+            const { verified } = verification.signatures[0];
+            
+            await verified;
+            return true;
         } catch (error) {
             return false;
         }
