@@ -46,7 +46,6 @@ export interface PackageResponse {
     trustLevel: RepositoryData['trustLevel'];
     repository: RepositoryData['githubUrl'];
     version: string;
-    signature?: string;
     isAudited: boolean;
 }
 

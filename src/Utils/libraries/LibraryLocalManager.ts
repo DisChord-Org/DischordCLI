@@ -13,7 +13,7 @@ class LibraryLocalManager {
     }
 
     public static toString (repo: PackageResponse): string {
-        return `+ ${green(`${repo.name} (${repo.version})`)} ${bold('-')} ${italic(gray(repo.description))}\n    - ${cyan(repo.repository)}\n    - ${cyan(TrustLevel[repo.trustLevel])}`;
+        return `+ ${green(`${repo.name} (${repo.version})`)} ${bold('-')} ${italic(gray(repo.description))}\n    - ${cyan(repo.repository)}\n    - ${cyan(TrustLevel[repo.trustLevel])}\n    - ${repo.isAudited? cyan('Firmado') : red('Sin firmar')}`;
     }
 
     public static existsRepo (name: PackageResponse['name'], version: PackageResponse['version'] | undefined = undefined): boolean {
@@ -24,8 +24,8 @@ class LibraryLocalManager {
     static getPackages (): PackagesRecordResponse {
         const librariesRecord: PackagesRecordResponse = {};
         
-        fs.readdirSync(this.LibrariesPath).map(filePath => {
-            const library = JSON.parse(fs.readFileSync(filePath, 'utf8')) as PackageResponse
+        fs.readdirSync(this.LibrariesPath).map(file => {
+            const library = JSON.parse(fs.readFileSync(path.join(this.LibrariesPath, file, 'data.json'), 'utf8')) as PackageResponse
             librariesRecord[library.name] = library;
         });
 

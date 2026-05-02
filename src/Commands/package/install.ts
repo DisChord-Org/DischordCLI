@@ -105,6 +105,11 @@ export default async function pkgInstall(name: string, version: string = 'latest
         macos: 'same'
     });
 
+    console.log(gray('Almacenando información útil...'));
+    const packageDataPath = path.join(LibraryLocalManager.LibrariesPath, name, 'data.json');
+    if (fs.existsSync(packageDataPath)) fs.unlinkSync(packageDataPath);
+    fs.writeFileSync(packageDataPath, JSON.stringify(pkg), 'utf8');
+
     console.log(gray(`Limpiando basura...`));
     if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
     if (fs.existsSync(sigPath)) fs.unlinkSync(sigPath);
