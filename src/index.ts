@@ -11,6 +11,7 @@ import run from "./Commands/run";
 import pkgInstall from "./Commands/package/install";
 import pkgSearch from "./Commands/package/search";
 import pkgUninstall from "./Commands/package/uninstall";
+import pkgUse from "./Commands/package/use";
 
 /**
  * Main Entry Point for the DisChord CLI.
@@ -102,14 +103,15 @@ pkgCommand
         new Option('-i, --installed', 'Forzar la búsqueda local').default(false, 'no forzar')
     )
     .action((query, options) => pkgSearch(query, options));
-/*
+
 pkgCommand
     .command('use')
     .description('Implementa en tu proyecto actual la librería especificada')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
     .addArgument(new Argument('<version>', 'Versión a la que cambiar').argRequired())
-    .action((name, version) => usePkg(name, version));
+    .action((name, version) => pkgUse(name, version));
 
+/*
 pkgCommand
     .command('unuse')
     .description('Elimina de tu proyecto actual la librería especificada')
