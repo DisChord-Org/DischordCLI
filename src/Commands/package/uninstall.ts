@@ -23,9 +23,7 @@ export default async function pkgUninstall(name: string, version: string): Promi
 
     if (!fs.existsSync(versionPath)) return console.log(red(`La versión ${bold(version)} de ${bold(name)} no está instalada.`));
 
-    fs.rmSync(versionPath, { recursive: true, force: true });
-
-    if (fs.readdirSync(packagePath).length === 0) fs.rmSync(packagePath, { recursive: true, force: true });
+    LibraryLocalManager.removePackage(name, version);
 
     console.log(`\n${bold(red('- ') + name)} ${gray(version)}\n`);
 }

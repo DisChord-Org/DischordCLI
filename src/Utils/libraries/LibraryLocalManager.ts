@@ -64,6 +64,21 @@ class LibraryLocalManager {
 
         return librariesRecord;
     }
+
+    /**
+     * Removes a specific package or version of a package from the local storage.
+     * @param name The name of the package to remove.
+     * @param version The version of the package to remove.
+     */
+    static removePackage (name: string, version: PackageResponse['version']) {
+        const packagePath = path.join(this.LibrariesPath, name);
+        const packageVersionPath = path.join(packagePath, version);
+        const packageDataPath = path.join(packagePath, 'data.json');
+
+        if (fs.existsSync(packageVersionPath)) fs.rmSync(packageVersionPath, { recursive: true, force: true });
+        if (fs.existsSync(packageDataPath)) fs.rmSync(packageDataPath);
+        if (fs.readdirSync(packagePath).length === 0) fs.rmSync(packagePath, { recursive: true, force: true });
+    }
 }
 
 /**

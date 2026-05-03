@@ -4,7 +4,6 @@ import { gray, green, red, yellow, cyan } from "../Utils/drawer";
 import Requester from "../Utils/requester";
 import { createDownloadProgressBar, printNewVersionAvailableMessage, updateAvailable } from "../Utils/utils";
 import homedir from '../Utils/homedir';
-import * as cliProgress from 'cli-progress';
 
 /**
  * Internal helper to download and install a specific component.
