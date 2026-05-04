@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import admZip from 'adm-zip';
 import { terminal } from 'terminal-kit';
+import Bun from 'bun';
 
 import Requester from "../../Utils/requester";
 import Commander from '../../Utils/commander';
@@ -121,6 +122,29 @@ export default async function pkgInstall(name: string, version: string = 'latest
         linux: 'same',
         macos: 'same'
     });
+
+    console.log(gray('Preparando módulos para el compilador...'));
+    const glob = new Bun.Glob("**/*.ts");
+
+    const tsFiles = Array.from(glob.scanSync({
+        cwd: packageBaseDir,
+        onlyFiles: true
+    }))
+        .filter(file => !file.includes('node_modules'))
+        .map(file => path.join(packageBaseDir, file));
+
+    if (tsFiles.length > 0) {
+        await Bun.build({
+            entrypoints: tsFiles,
+            outdir: packageBaseDir,
+            naming: "[dir]/[name].mjs",
+            target: 'node',
+            format: 'esm',
+            root: packageBaseDir,
+            minify: false
+        });
+        console.log(gray('Transpilación completada con éxito.'));
+    }
 
     console.log(gray('Almacenando información útil...'));
     const packageDataPath = path.join(LibraryLocalManager.LibrariesPath, name, 'data.json');
