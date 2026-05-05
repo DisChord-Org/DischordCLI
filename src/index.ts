@@ -94,9 +94,8 @@ const pkgCommand = program
 pkgCommand
     .command('install')
     .description('Instala una librería de DisChord')
-    .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
-    .addArgument(new Argument('[version]', 'Versión específica (por defecto latest)'))
-    .action((name, version) => pkgInstall(name, version));
+    .addArgument(new Argument('<packages...>', 'Paquetes a instalar').argRequired())
+    .action((packages) => pkgInstall(packages));
 
 /**
  * Subcommand: pkg uninstall

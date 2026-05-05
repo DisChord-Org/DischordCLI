@@ -29,13 +29,29 @@ const vRegex = /^v\d+\.\d+\.\d+$/;
  * 7. Persistence of package metadata in 'data.json'.
  * 
  * @async
- * @param {string} name - The unique name of the package to install.
- * @param {string} [version='latest'] - The target version tag or 'latest'.
+ * @param {string[]} packages - Array of packages in 'name@version' format.
  * @returns {Promise<void>}
  */
-export default async function pkgInstall(name: string, version: string = 'latest'): Promise<void> {
-    if (version !== 'latest' && !vRegex.test(version) && !semver.valid(version)) return console.log(red(`El formato de versión "${version}" es inválido. Usa ${bold('vX.X.X')}`));
+export default async function pkgInstall (packages: string[]): Promise<void> {
+    for (const pkgInput of packages) {
+        let [name, version] = pkgInput.includes('@')? pkgInput.split('@') : [pkgInput, 'latest'];
 
+        if (version !== 'latest' && !vRegex.test(version) && !semver.valid(version)) {
+            console.log(red(`El formato de versión "${version}" para ${bold(name)} es inválido. Use vX.X.X`));
+            continue;
+        }
+
+        if (version === 'latest') return console.log(bold(red('Aún no es posible usar latest.')));
+
+        try {
+            await installSinglePackage(name, version);
+        } catch (error) {
+            console.log(red(`Error fatal instalando ${name}:`), error);
+        }
+    }
+}
+
+async function installSinglePackage (name: string, version: string): Promise<void> {
     console.log(gray(`Buscando ${bold(`${name}@${version}`)} en el registro...`));
     const pkg = await LibraryAPIManager.getPackage(name, version);
     
