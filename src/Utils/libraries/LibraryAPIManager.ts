@@ -1,10 +1,12 @@
 import fs from 'fs';
-import path from 'path';
 import * as openpgp from 'openpgp';
+import semver from 'semver';
 
 import requester from '../requester';
-import { PackageResponse, PackagesRecordResponse } from './types';
+import LibraryLocalManager from './LibraryLocalManager';
 import { PublicKey } from './PublicKey';
+import { PackageResponse, PackagesRecordResponse, TrustLevel } from './types';
+import { bold, cyan, gray, green, italic, red } from '../drawer';
 
 /**
  * Interface for interacting with the remote DisChord Package Registry API.
@@ -25,13 +27,32 @@ class LibraryAPIManager {
     constructor () {}
 
     /**
+     * Formats a package response into a stylized string for terminal output.
+     * Includes the package name, version, description, repository URL, and trust/audit status.
+     * @param {PackageResponse} repo - The package data to format.
+     * @returns {string} A colorized and formatted string ready for the console.
+     */
+    public static toString (repo: PackageResponse): string {
+        const versionTags = Object.keys(repo.versions).sort(semver.compare);
+        const chunkedVersions = [];
+
+        for (let x = 0; x < versionTags.length; x += 5) {
+            const line = versionTags.slice(x, x + 5).join('    ');
+
+            chunkedVersions.push(`      ${LibraryLocalManager.existsRepo(repo.name, line)? cyan(line) : gray(line)}`);
+        }
+    
+        return `+ ${green(`${repo.name} (${repo.version})`)} ${bold('-')} ${italic(gray(repo.description))}\n    - ${cyan(repo.repository)}\n    - ${cyan(TrustLevel[repo.trustLevel])}\n    - ${repo.isAudited? cyan('Firmado') : red('Sin firmar')}\n    - ${cyan('Versiones:')}\n${chunkedVersions.join('\n')}`;
+    }
+
+    /**
      * Retrieves detailed metadata for a specific package from the remote registry.
      * @async
      * @param {string} name - The unique name of the package to search for.
      * @returns {Promise<PackageResponse | undefined>} A promise resolving to the package data or undefined if not found.
      */
-    public static async getPackage (name: PackageResponse['name']): Promise<PackageResponse | undefined> {
-        const response = await requester.get(`/packages/${name}`);
+    public static async getPackage (name: PackageResponse['name'], version: PackageResponse['version']): Promise<PackageResponse | undefined> {
+        const response = await requester.get(`/packages/${name}/${version}`);
 
         return response as PackageResponse | undefined;
     }

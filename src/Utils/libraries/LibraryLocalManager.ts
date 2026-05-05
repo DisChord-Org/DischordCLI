@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import semver from 'semver';
 
 import homedir from "../homedir";
 import { PackageResponse, PackagesRecordResponse, TrustLevel } from './types';
@@ -33,7 +34,16 @@ class LibraryLocalManager {
      * @returns {string} A colorized and formatted string ready for the console.
      */
     public static toString (repo: PackageResponse): string {
-        return `+ ${green(`${repo.name} (${repo.version})`)} ${bold('-')} ${italic(gray(repo.description))}\n    - ${cyan(repo.repository)}\n    - ${cyan(TrustLevel[repo.trustLevel])}\n    - ${repo.isAudited? cyan('Firmado') : red('Sin firmar')}`;
+        const versionTags = LibraryLocalManager.getLocalVersionFolders(repo.name).sort(semver.compare);
+        const chunkedVersions = [];
+
+        for (let x = 0; x < versionTags.length; x += 5) {
+            const line = versionTags.slice(x, x + 5).join('    ');
+            
+            chunkedVersions.push(`      ${cyan(line)}`);
+        }
+
+        return `+ ${green(`${repo.name} (${repo.version})`)} ${bold('-')} ${italic(gray(repo.description))}\n    - ${cyan(repo.repository)}\n    - ${cyan(TrustLevel[repo.trustLevel])}\n    - ${repo.isAudited? cyan('Firmado') : red('Sin firmar')}\n    - ${cyan('Versiones:')}\n${chunkedVersions.join('\n')}`;
     }
 
     /**
@@ -78,6 +88,19 @@ class LibraryLocalManager {
         if (fs.existsSync(packageVersionPath)) fs.rmSync(packageVersionPath, { recursive: true, force: true });
         if (fs.existsSync(packageDataPath)) fs.rmSync(packageDataPath);
         if (fs.readdirSync(packagePath).length === 0) fs.rmSync(packagePath, { recursive: true, force: true });
+    }
+    /*
+     * Scans the file system for existing version folders of a specific repository.
+     * @param {string} repoName - The name of the repository to scan.
+     * @returns {string[]} An array of folder names (tags) found on disk.
+     */
+    public static getLocalVersionFolders(repoName: PackageResponse['name']): PackageResponse['version'][] {
+        const repoDir = path.join(this.LibrariesPath, repoName);
+        if (!fs.existsSync(repoDir)) return [];
+
+        return fs.readdirSync(repoDir).filter(file =>
+            fs.statSync(path.join(repoDir, file)).isDirectory()
+        );
     }
 }
 

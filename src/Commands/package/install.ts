@@ -37,7 +37,7 @@ export default async function pkgInstall(name: string, version: string = 'latest
     if (version !== 'latest' && !vRegex.test(version) && !semver.valid(version)) return console.log(red(`El formato de versión "${version}" es inválido. Usa ${bold('vX.X.X')}`));
 
     console.log(gray(`Buscando ${bold(`${name}@${version}`)} en el registro...`));
-    const pkg = await LibraryAPIManager.getPackage(name);
+    const pkg = await LibraryAPIManager.getPackage(name, version);
     
     if (!pkg) return console.log(red(`No se encontró el paquete ${bold(name)}.`));
     if(LibraryLocalManager.existsRepo(name, pkg.version)) return console.log(`\n${bold(green('+ ') + name)} ${gray(pkg.version)}\n`);;
@@ -48,7 +48,7 @@ export default async function pkgInstall(name: string, version: string = 'latest
     const { bar, handleProgress } = createDownloadProgressBar(`${name}@${pkg.version}`);
 
     await Requester.downloadFile(
-        `${Requester.url}/packages/${name}/download`,
+        `${Requester.url}/packages/${name}/${version}/download`,
         zipPath,
         handleProgress
     );
@@ -57,7 +57,7 @@ export default async function pkgInstall(name: string, version: string = 'latest
     if (pkg.isAudited) {
         console.log(gray('Obteniendo firma...'));
         await Requester.downloadFile(
-            `${Requester.url}/packages/${name}/sign/download`,
+            `${Requester.url}/packages/${name}/${version}/sign/download`,
             `${zipPath}.asc`
         );
 

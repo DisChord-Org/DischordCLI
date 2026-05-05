@@ -84,8 +84,9 @@ export interface PackageResponse {
     description: RepositoryData['description'];
     trustLevel: RepositoryData['trustLevel'];
     repository: RepositoryData['githubUrl'];
-    version: string;
-    isAudited: boolean;
+    version: PackageVersion['tag'];
+    isAudited: PackageVersion['isAudited'];
+    versions: RepositoryData['versions'];
 }
 
 /**
