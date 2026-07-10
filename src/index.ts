@@ -40,8 +40,10 @@ program
 /**
  * Subcommand: update
  * Manages updates for the CLI, Compiler, or the entire ecosystem.
- * Includes a --force option to bypass version comparison.
- * Usage: chord update <cli|compiler|all> [-f]
+ * Includes a --force option to bypass version comparison, and a --json
+ * option that switches the output to NDJSON (one JSON object per line)
+ * for external integrations such as DisChord Code Studio.
+ * Usage: chord update <cli|compiler|all> [-f] [--json]
  */
 program
     .command('update')
@@ -53,6 +55,9 @@ program
     )
     .addOption(
         new Option('-f, --force', 'Forzar actualización ignorando versiones').default(false, 'no forzar')
+    )
+    .addOption(
+        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
     )
     .action((args, options) => update(args, options));
 
