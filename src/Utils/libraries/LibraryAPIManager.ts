@@ -49,21 +49,27 @@ class LibraryAPIManager {
      * Retrieves detailed metadata for a specific package from the remote registry.
      * @async
      * @param {string} name - The unique name of the package to search for.
+     * @param {string} version - The target package version.
      * @returns {Promise<PackageResponse | undefined>} A promise resolving to the package data or undefined if not found.
      */
     public static async getPackage (name: PackageResponse['name'], version: PackageResponse['version']): Promise<PackageResponse | undefined> {
-        const response = await requester.get(`/packages/${name}/${version}`);
+        try {
+            return await requester.get<PackageResponse>(`/packages/${name}/${version}`);
+        } catch (error) {
+            if (error instanceof Error && error.message.includes('HTTP 404')) return undefined;
 
-        return response as PackageResponse | undefined;
+            throw error;
+        }
     }
 
     /**
      * Fetches the complete list of available packages from the registry.
      * @async
+     * @throws {Error} If the network request fails or server responds with error.
      * @returns {Promise<PackagesRecordResponse>} A promise resolving to a record of all registered packages.
      */
-    public static async getPackages (): Promise<PackagesRecordResponse> {
-        return await requester.get(`/packages`);
+    public static async getPackages(): Promise<PackagesRecordResponse> {
+        return await requester.get<PackagesRecordResponse>('/packages');
     }
 
     /**
