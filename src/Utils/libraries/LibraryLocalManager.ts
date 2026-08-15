@@ -86,8 +86,12 @@ class LibraryLocalManager {
         const packageDataPath = path.join(packagePath, 'data.json');
 
         if (fs.existsSync(packageVersionPath)) fs.rmSync(packageVersionPath, { recursive: true, force: true });
+
+        const remainingVersions = LibraryLocalManager.getLocalVersionFolders(name);
+        if (remainingVersions.length > 0) return;
+
         if (fs.existsSync(packageDataPath)) fs.rmSync(packageDataPath);
-        if (fs.readdirSync(packagePath).length === 0) fs.rmSync(packagePath, { recursive: true, force: true });
+        if (fs.existsSync(packagePath) && fs.readdirSync(packagePath).length === 0) fs.rmSync(packagePath, { recursive: true, force: true });
     }
     /*
      * Scans the file system for existing version folders of a specific repository.
