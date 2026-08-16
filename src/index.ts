@@ -110,14 +110,19 @@ pkgCommand
 /**
  * Subcommand: pkg uninstall
  * Permanently removes a library or a specific version from the global storage.
- * Usage: chord pkg uninstall <nombre> <version>
+ * Includes a --json option that emits a single NDJSON result event for external
+ * integrations such as DisChord Code Studio.
+ * Usage: chord pkg uninstall <nombre> <version> [--json]
  */
 pkgCommand
     .command('uninstall')
     .description('Elimina una librería globalmente')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
     .addArgument(new Argument('<version>', 'Versión a borrar').argRequired())
-    .action((name, version) => pkgUninstall(name, version));
+    .addOption(
+        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
+    )
+    .action((name, version, options) => pkgUninstall(name, version, options));
 
 /**
  * Subcommand: pkg search
