@@ -73,6 +73,21 @@ class LibraryAPIManager {
     }
 
     /**
+     * Resolves the latest published version tag for a specific package.
+     * The registry does not accept the literal "latest" as a version in its
+     * per-version endpoints, so this looks it up via the package listing,
+     * where the server already computes the newest tag for each package.
+     * @async
+     * @param {string} name - The unique name of the package to resolve.
+     * @throws {Error} If the network request fails or server responds with error.
+     * @returns {Promise<string | undefined>} The latest version tag, or undefined if the package is not registered or has no versions.
+     */
+    public static async getLatestVersion (name: PackageResponse['name']): Promise<PackageResponse['version'] | undefined> {
+        const packages = await LibraryAPIManager.getPackages();
+        return packages[name]?.version;
+    }
+
+    /**
      * Performs a cryptographic verification of a file's integrity using OpenPGP.
      * Validates that the file has been signed by the official DisChord key and has not been tampered with.
      * 

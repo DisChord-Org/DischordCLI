@@ -41,7 +41,16 @@ export default async function pkgInstall (packages: string[]): Promise<void> {
             continue;
         }
 
-        if (version === 'latest') return console.log(bold(red('Aún no es posible usar latest.')));
+        if (version === 'latest') {
+            const latestVersion = await LibraryAPIManager.getLatestVersion(name);
+
+            if (!latestVersion) {
+                console.log(red(`No se encontró el paquete ${bold(name)}.`));
+                continue;
+            }
+
+            version = latestVersion;
+        }
 
         try {
             await installSinglePackage(name, version);
