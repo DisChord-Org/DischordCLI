@@ -31,6 +31,11 @@ export default function init (arg: string) {
     });
     console.log(green('+') + ` node_modules`);
 
+    const packageJsonPath = path.join(projectPath, 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    packageJson.type = 'module';
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
+
     Commander.run({
         windows: `cd ${projectPath} && pnpm install seyfert`,
         linux: 'same',
