@@ -122,7 +122,10 @@ pkgCommand
 /**
  * Subcommand: pkg search
  * Queries the official registry or local storage for available libraries.
- * Usage: chord pkg search [query] [-i]
+ * Includes a --json option that prints the results as a single JSON array of
+ * packages for external integrations such as DisChord Code Studio, instead of
+ * the colorized text blocks meant for humans.
+ * Usage: chord pkg search [query] [-i] [--json]
  */
 pkgCommand
     .command('search')
@@ -131,31 +134,44 @@ pkgCommand
     .addOption(
         new Option('-i, --installed', 'Forzar la búsqueda local').default(false, 'no forzar')
     )
+    .addOption(
+        new Option('--json', 'Salida en JSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
+    )
     .action((query, options) => pkgSearch(query, options));
 
 /**
  * Subcommand: pkg use
- * Creates a symbolic link (junction on Windows) of a specific library version 
- * into the current project's /lib directory.
- * Usage: chord pkg use <nombre> <version>
+ * Creates a symbolic link (junction on Windows) of a specific library version
+ * into the current project's /lib directory. Includes a --json option that
+ * emits a single NDJSON result event for external integrations such as
+ * DisChord Code Studio.
+ * Usage: chord pkg use <nombre> <version> [--json]
  */
 pkgCommand
     .command('use')
     .description('Implementa en tu proyecto actual la librería especificada')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
     .addArgument(new Argument('<version>', 'Versión a la que cambiar').argRequired())
-    .action((name, version) => pkgUse(name, version));
+    .addOption(
+        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
+    )
+    .action((name, version, options) => pkgUse(name, version, options));
 
 /**
  * Subcommand: pkg unuse
  * Removes the symbolic link of a library from the current project's /lib directory.
- * Usage: chord pkg unuse <nombre>
+ * Includes a --json option that emits a single NDJSON result event for external
+ * integrations such as DisChord Code Studio.
+ * Usage: chord pkg unuse <nombre> [--json]
  */
 pkgCommand
     .command('unuse')
     .description('Elimina de tu proyecto actual la librería especificada')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
-    .action((name) => pkgUnuse(name));
+    .addOption(
+        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
+    )
+    .action((name, options) => pkgUnuse(name, options));
 
 /**
  * Process the raw command-line arguments provided by the user.
