@@ -35,8 +35,8 @@ export default async function run (arg: string) {
     const dist = path.join(dir, '../', 'dist');
     if (!fs.existsSync(dist)) return console.log(red('No se ha encontrado la carpeta dist.') + '\nSe encontró ' + gray(`'${path.basename(dist)}'`) + '\nEn ' + gray(dist));
 
-    const indexPath = path.join(dist, 'index.mjs');
-    if (!fs.existsSync(indexPath)) return console.log(red('No se ha encontrado el archivo index.mjs en la carpeta dist.') + '\nSe encontró ' + gray(`'${path.basename(indexPath)}'`) + '\nEn ' + gray(indexPath));
+    const indexPath = path.join(dist, 'index.js');
+    if (!fs.existsSync(indexPath)) return console.log(red('No se ha encontrado el archivo index.js en la carpeta dist.') + '\nSe encontró ' + gray(`'${path.basename(indexPath)}'`) + '\nEn ' + gray(indexPath));
 
     /**
      * Final Execution:
