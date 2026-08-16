@@ -93,14 +93,19 @@ const pkgCommand = program
 
 /**
  * Subcommand: pkg install
- * Downloads and installs a DisChord library globally.
- * Usage: chord pkg install <nombre> [version]
+ * Downloads and installs a DisChord library globally. Includes a --json option
+ * that switches the output to NDJSON (one JSON object per line) for external
+ * integrations such as DisChord Code Studio, mirroring 'chord update --json'.
+ * Usage: chord pkg install <nombre> [version] [--json]
  */
 pkgCommand
     .command('install')
     .description('Instala una librería de DisChord')
     .addArgument(new Argument('<packages...>', 'Paquetes a instalar').argRequired())
-    .action((packages) => pkgInstall(packages));
+    .addOption(
+        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
+    )
+    .action((packages, options) => pkgInstall(packages, options));
 
 /**
  * Subcommand: pkg uninstall

@@ -4,6 +4,7 @@ import { gray, green, red, yellow, cyan } from "../Utils/drawer";
 import Requester from "../Utils/requester";
 import { createDownloadProgressBar, printNewVersionAvailableMessage, updateAvailable } from "../Utils/utils";
 import homedir from '../Utils/homedir';
+import { emitJson, createThrottledProgressEmitter } from '../Utils/ndjson';
 
 type UpdateTool = 'cli' | 'compiler' | 'all';
 type UpdatePhase = 'checking' | 'up_to_date' | 'downloading' | 'installing' | 'done' | 'error' | 'finished';
@@ -27,10 +28,6 @@ interface JsonEvent {
     total_bytes?: number;
     version?: string;
     message?: string;
-}
-
-function emitJson(event: JsonEvent) {
-    process.stdout.write(JSON.stringify(event) + '\n');
 }
 
 /**
@@ -59,27 +56,18 @@ async function updateComponent(component: 'cli' | 'compiler', version: string, b
     }
 
     if (json) {
-        let lastEmittedPercent = -1;
-        emitJson({ tool: component, phase: 'downloading', percent: 0, current_bytes: 0, version });
+        emitJson<JsonEvent>({ tool: component, phase: 'downloading', percent: 0, current_bytes: 0, version });
 
-        await Requester.downloadComponent(component, version, binPath, (progress) => {
-            const percent = progress.total > 0 ? (progress.transferred / progress.total) * 100 : 0;
-            const roundedPercent = Math.floor(percent);
+        await Requester.downloadComponent(component, version, binPath, createThrottledProgressEmitter<JsonEvent>((percent, progress) => ({
+            tool: component,
+            phase: 'downloading',
+            percent,
+            current_bytes: progress.transferred,
+            total_bytes: progress.total,
+            version,
+        })));
 
-            if (roundedPercent !== lastEmittedPercent) {
-                lastEmittedPercent = roundedPercent;
-                emitJson({
-                    tool: component,
-                    phase: 'downloading',
-                    percent,
-                    current_bytes: progress.transferred,
-                    total_bytes: progress.total,
-                    version,
-                });
-            }
-        });
-
-        emitJson({ tool: component, phase: 'installing', version });
+        emitJson<JsonEvent>({ tool: component, phase: 'installing', version });
     } else {
         const { bar, handleProgress } = createDownloadProgressBar(component);
 
