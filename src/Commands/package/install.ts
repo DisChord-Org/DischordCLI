@@ -9,6 +9,7 @@ import Requester from "../../Utils/requester";
 import Commander from '../../Utils/commander';
 import LibraryAPIManager from '../../Utils/libraries/LibraryAPIManager';
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
+import compile from '../compile';
 
 import { red, green, gray, yellow, bold } from "../../Utils/drawer";
 import { createBox, createDownloadProgressBar } from "../../Utils/utils";
@@ -233,6 +234,13 @@ async function installSinglePackage (name: string, version: string, json: boolea
 
     fs.rmSync(tempDir, { recursive: true, force: true });
 
+    const packageJsonPath = path.join(packageBaseDir, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        packageJson.type = 'module';
+        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
+    }
+
     if (json) emitJson({ package: name, version: pkg.version, phase: 'installing_deps' });
     else console.log(gray('Instalando paquetes dependencias...'));
 
@@ -258,7 +266,7 @@ async function installSinglePackage (name: string, version: string, json: boolea
         await Bun.build({
             entrypoints: tsFiles,
             outdir: packageBaseDir,
-            naming: "[dir]/[name].mjs",
+            naming: "[dir]/[name].js",
             target: 'node',
             format: 'esm',
             root: packageBaseDir,
@@ -266,6 +274,24 @@ async function installSinglePackage (name: string, version: string, json: boolea
         });
 
         if (!json) console.log(gray('Transpilación completada con éxito.'));
+    }
+
+    const chordGlob = new Bun.Glob("**/*.chord");
+
+    const chordFiles = Array.from(chordGlob.scanSync({
+        cwd: packageBaseDir,
+        onlyFiles: true
+    }))
+        .filter(file => !file.includes('node_modules'))
+        .map(file => path.join(packageBaseDir, file));
+
+    if (chordFiles.length > 0) {
+        if (json) emitJson({ package: name, version: pkg.version, phase: 'compiling' });
+        else console.log(gray('Compilando ficheros .chord...'));
+
+        for (const chordFile of chordFiles) await compile(chordFile, path.dirname(chordFile));
+
+        if (!json) console.log(gray('Compilación de .chord completada con éxito.'));
     }
 
     const packageDataPath = path.join(LibraryLocalManager.LibrariesPath, name, 'data.json');
