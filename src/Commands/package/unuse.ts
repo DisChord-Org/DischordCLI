@@ -3,6 +3,7 @@ import fs from 'fs';
 
 import { red, gray, bold } from "../../Utils/drawer";
 import { emitJson } from '../../Utils/ndjson';
+import LockFile from '../../Utils/libraries/LockFile';
 
 /** Options accepted by the {@link pkgUnuse} command. */
 interface UnuseOptions {
@@ -27,6 +28,8 @@ interface UnuseJsonEvent {
  * @param {string} name - The name of the library to unlink.
  * @param {UnuseOptions} [options] - Command options. 'json' switches the output to a single
  * NDJSON result event for external integrations (ej. DisChord Code Studio).
+ * On success, also removes the entry from the project's 'dischord.lock.conf' lock file
+ * (see {@link LockFile}).
  * @returns {Promise<void>}
  */
 export default async function pkgUnuse(name: string, options: UnuseOptions = {}): Promise<void> {
@@ -46,6 +49,8 @@ export default async function pkgUnuse(name: string, options: UnuseOptions = {})
 
         if (stats.isSymbolicLink() || stats.isFile()) fs.unlinkSync(targetPath);
         else fs.rmSync(targetPath, { recursive: true, force: true });
+
+        LockFile.removeEntry(name);
 
         let libDirRemoved = false;
         if (fs.readdirSync(projectLibDir).length === 0) {

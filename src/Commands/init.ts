@@ -49,7 +49,7 @@ export default function init (arg: string) {
     fs.writeFileSync(path.join(projectPath, 'src', 'index.chord'), '// Tu código de DisChord aquí\n', 'utf-8');
     console.log(green('+') + ` /${path.basename(projectPath)}/src/index.chord`);
 
-    fs.writeFileSync(path.join(projectPath, '.gitignore'), 'node_modules\npackage.json\npnpm-lock.yaml\nseyfert.config.mjs\ndist\n', 'utf-8');
+    fs.writeFileSync(path.join(projectPath, '.gitignore'), 'node_modules\npackage.json\npnpm-lock.yaml\nseyfert.config.mjs\ndist\nlib\n', 'utf-8');
     console.log(green('+') + ` /${path.basename(projectPath)}/.gitignore`);
 
     console.log('\n' + yellow('────────') + ' Proyecto inicializado ' + yellow('────────'));

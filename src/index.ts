@@ -13,6 +13,7 @@ import pkgSearch from "./Commands/package/search";
 import pkgUninstall from "./Commands/package/uninstall";
 import pkgUse from "./Commands/package/use";
 import pkgUnuse from "./Commands/package/unuse";
+import pkgSync from "./Commands/package/sync";
 
 /**
  * Main Entry Point for the DisChord CLI.
@@ -177,6 +178,22 @@ pkgCommand
         new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
     )
     .action((name, options) => pkgUnuse(name, options));
+
+/**
+ * Subcommand: pkg sync
+ * Restores every package declared in the project's 'dischord.lock.conf' lock file:
+ * installs any that are missing globally and links them into './lib', skipping
+ * ones already in place. Mirrors 'npm install' / 'pip install -r requirements.txt'.
+ * Includes a --json option for external integrations such as DisChord Code Studio.
+ * Usage: chord pkg sync [--json]
+ */
+pkgCommand
+    .command('sync')
+    .description('Instala y enlaza en tu proyecto todos los paquetes declarados en dischord.lock.conf')
+    .addOption(
+        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
+    )
+    .action((options) => pkgSync(options));
 
 /**
  * Process the raw command-line arguments provided by the user.

@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
+import LockFile from '../../Utils/libraries/LockFile';
 
 import { red, green, gray, bold } from "../../Utils/drawer";
 import Commander from '../../Utils/commander';
@@ -34,6 +35,8 @@ interface UseJsonEvent {
  * @param {string} version - The specific version tag to link.
  * @param {UseOptions} [options] - Command options. 'json' switches the output to a single
  * NDJSON result event for external integrations (ej. DisChord Code Studio).
+ * On success, also records the link in the project's 'dischord.lock.conf' lock file
+ * (see {@link LockFile}), so 'chord pkg sync' can restore it later.
  * @returns {Promise<void>}
  */
 export default async function pkgUse(name: string, version: string, options: UseOptions = {}): Promise<void> {
@@ -59,6 +62,7 @@ export default async function pkgUse(name: string, version: string, options: Use
 
     try {
         fs.symlinkSync(sourcePath, targetPath, Commander.isWindows ? 'junction' : 'dir');
+        LockFile.setEntry(name, version);
 
         if (json) emitJson<UseJsonEvent>({ package: name, version, phase: 'linked', path: targetPath });
         else console.log(`\n${green('Linked:')} ${bold(name)} (${version}) -> ./lib/${name}`);
