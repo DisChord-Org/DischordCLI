@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import Commander from './commander';
+import homedir from './homedir';
 
 /**
  * Utility class responsible for managing a project's 'package.json' and its pnpm-installed
@@ -10,6 +11,59 @@ import Commander from './commander';
  * '"type": "module"', and installing/removing dependencies).
  */
 class ProjectManifest {
+    /**
+     * Environment variables stripped before running npm/pnpm (mirrors DisChord Code Studio's
+     * own 'NPM_ENV_VARS_TO_STRIP', see its 'src-tauri/src/platform.rs'). If set in the user's
+     * own shell (ej. an active corepack setup, or a separately installed global pnpm), these can
+     * redirect pnpm's store/global prefix or its resolved npm/node paths, overriding the bundled
+     * toolchain even when it's first on PATH.
+     */
+    private static readonly NPM_ENV_VARS_TO_STRIP = [
+        'COREPACK_ROOT',
+        'COREPACK_ENABLE_STRICT',
+        'COREPACK_ENABLE_AUTO_PIN',
+        'COREPACK_ENABLE_NETWORK',
+        'COREPACK_NPM_REGISTRY',
+        'COREPACK_NPM_TOKEN',
+        'npm_config_user_agent',
+        'npm_execpath',
+        'npm_node_execpath',
+        'npm_config_prefix',
+        'npm_config_global_prefix',
+        'npm_package_json',
+        'npm_lifecycle_event',
+        'npm_lifecycle_script',
+        'PNPM_HOME',
+        'PNPM_SCRIPT_SRC_DIR'
+    ];
+
+    /**
+     * Builds the environment to run pnpm with. When the DisChord IDE's bundled Node.js/pnpm
+     * toolchain is present (see {@link homedir.hasNodeToolchain}), its bin folder is prepended
+     * to PATH so the plain 'pnpm'/'node' commands below resolve to that bundled toolchain
+     * instead of whatever (possibly older, or entirely absent) version is globally installed
+     * on the system, and any environment variable that could redirect npm/pnpm elsewhere (see
+     * {@link NPM_ENV_VARS_TO_STRIP}) is stripped. Falls back to the current environment
+     * untouched otherwise, so the CLI keeps working standalone, without the IDE, by using the
+     * system's own pnpm.
+     * @returns {NodeJS.ProcessEnv} The environment to pass to the child process.
+     */
+    private static pnpmEnv (): NodeJS.ProcessEnv {
+        if (!homedir.hasNodeToolchain()) return process.env;
+
+        const toolchainBinDir = homedir.getNodeToolchainBinDir();
+        const separator = Commander.isWindows ? ';' : ':';
+
+        const env: NodeJS.ProcessEnv = {
+            ...process.env,
+            PATH: `${toolchainBinDir}${separator}${process.env.PATH ?? ''}`
+        };
+
+        for (const key of ProjectManifest.NPM_ENV_VARS_TO_STRIP) delete env[key];
+
+        return env;
+    }
+
     /**
      * Resolves the absolute path to a directory's 'package.json'.
      * @param {string} projectDir - The directory containing (or that should contain) the manifest.
@@ -40,7 +94,7 @@ class ProjectManifest {
                 windows: `cd "${projectDir}" && pnpm init`,
                 linux: 'same',
                 macos: 'same'
-            });
+            }, { env: ProjectManifest.pnpmEnv() });
         }
 
         ProjectManifest.setModuleType(projectDir);
@@ -94,7 +148,7 @@ class ProjectManifest {
             windows: `cd "${projectDir}" && pnpm install${pkgArgs}`,
             linux: 'same',
             macos: 'same'
-        });
+        }, { env: ProjectManifest.pnpmEnv() });
     }
 
     /**
@@ -110,7 +164,7 @@ class ProjectManifest {
             windows: `cd "${projectDir}" && pnpm remove ${packages.join(' ')}`,
             linux: 'same',
             macos: 'same'
-        });
+        }, { env: ProjectManifest.pnpmEnv() });
     }
 }
 
