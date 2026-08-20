@@ -6,7 +6,7 @@ import { terminal } from 'terminal-kit';
 import Bun from 'bun';
 
 import Requester from "../../Utils/requester";
-import Commander from '../../Utils/commander';
+import ProjectManifest from '../../Utils/ProjectManifest';
 import LibraryAPIManager from '../../Utils/libraries/LibraryAPIManager';
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
 import compile from '../compile';
@@ -234,21 +234,12 @@ async function installSinglePackage (name: string, version: string, json: boolea
 
     fs.rmSync(tempDir, { recursive: true, force: true });
 
-    const packageJsonPath = path.join(packageBaseDir, 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        packageJson.type = 'module';
-        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
-    }
+    ProjectManifest.setModuleType(packageBaseDir);
 
     if (json) emitJson({ package: name, version: pkg.version, phase: 'installing_deps' });
     else console.log(gray('Instalando paquetes dependencias...'));
 
-    Commander.run({
-        windows: `cd ${packageBaseDir} && pnpm install`,
-        linux: 'same',
-        macos: 'same'
-    });
+    ProjectManifest.install(packageBaseDir);
 
     const glob = new Bun.Glob("**/*.ts");
 

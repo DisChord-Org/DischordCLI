@@ -87,6 +87,40 @@ class homedir {
         const ext = Commander.isWindows ? '.exe' : '';
         return path.join(this._BinFolder, `${component}${ext}`);
     }
+
+    /**
+     * Resolves the directory holding the Node.js/pnpm toolchain bundled by the DisChord IDE
+     * (downloaded next to the CLI/compiler binaries, under the same bin folder), so it can be
+     * prepended to a child process' PATH. This differs by OS because Node's own official
+     * distribution layout differs: Unix ships its executables under a 'bin' subfolder, while
+     * Windows ships them flat at the toolchain root alongside '.cmd' shims.
+     * @returns {string} The absolute path to the folder containing 'node'/'pnpm' (and friends).
+     */
+    public getNodeToolchainBinDir (): string {
+        const nodeDir = path.join(this._BinFolder, 'node');
+        return Commander.isWindows ? nodeDir : path.join(nodeDir, 'bin');
+    }
+
+    /**
+     * Checks whether the DisChord IDE's bundled Node.js/pnpm toolchain is present on this
+     * system. When absent (ej. the CLI is used standalone, without the IDE), callers should
+     * fall back to whatever 'pnpm'/'node' is available on the system's own PATH.
+     * @returns {boolean} True if the bundled toolchain's bin folder exists.
+     */
+    public hasNodeToolchain (): boolean {
+        return fs.existsSync(this.getNodeToolchainBinDir());
+    }
+
+    /**
+     * Resolves the full path to the bundled toolchain's own 'node' executable, so it can be
+     * invoked directly (ej. to run the compiled bot) instead of relying on whatever 'node' is
+     * first on the system's PATH.
+     * @returns {string} The absolute path to the bundled 'node'/'node.exe' binary.
+     */
+    public getNodeBinaryPath (): string {
+        const filename = Commander.isWindows ? 'node.exe' : 'node';
+        return path.join(this.getNodeToolchainBinDir(), filename);
+    }
 }
 
 /** Singleton instance of the homedir manager. */

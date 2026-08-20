@@ -1,11 +1,11 @@
-import Commander from "../Utils/commander";
+import ProjectManifest from "../Utils/ProjectManifest";
 import path from "path";
 import fs from 'fs'
 import { gray, green, italic, red, yellow } from "../Utils/drawer";
 
 /**
  * Initializes a new DisChord project structure in the specified directory.
- * This function handles path resolution, folder creation, and the installation 
+ * This function handles path resolution, folder creation, and the installation
  * of necessary dependencies like Seyfert via pnpm.
  * * @param arg The path where the project should be initialized (relative or absolute).
  * @returns {void}
@@ -23,24 +23,11 @@ export default function init (arg: string) {
 
     fs.mkdirSync(projectPath, { recursive: true });
     console.log(green('+') + ` /${path.basename(projectPath)}`);
-    
-    Commander.run({
-        windows: `cd ${projectPath} && pnpm init`,
-        linux: 'same',
-        macos: 'same'
-    });
+
+    ProjectManifest.ensure(projectPath);
+    ProjectManifest.install(projectPath, ['seyfert']);
+
     console.log(green('+') + ` node_modules`);
-
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-    packageJson.type = 'module';
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
-
-    Commander.run({
-        windows: `cd ${projectPath} && pnpm install seyfert`,
-        linux: 'same',
-        macos: 'same'
-    });
     console.log(green('+') + ` seyfert`);
 
     fs.mkdirSync(path.join(projectPath, 'src'), { recursive: true });
