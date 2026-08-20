@@ -110,6 +110,17 @@ class homedir {
     public hasNodeToolchain (): boolean {
         return fs.existsSync(this.getNodeToolchainBinDir());
     }
+
+    /**
+     * Resolves the full path to the bundled toolchain's own 'node' executable, so it can be
+     * invoked directly (ej. to run the compiled bot) instead of relying on whatever 'node' is
+     * first on the system's PATH.
+     * @returns {string} The absolute path to the bundled 'node'/'node.exe' binary.
+     */
+    public getNodeBinaryPath (): string {
+        const filename = Commander.isWindows ? 'node.exe' : 'node';
+        return path.join(this.getNodeToolchainBinDir(), filename);
+    }
 }
 
 /** Singleton instance of the homedir manager. */

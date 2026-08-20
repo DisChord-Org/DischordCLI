@@ -2,18 +2,27 @@ import fs from 'fs';
 import path from 'path';
 import { gray, red } from '../Utils/drawer';
 import Commander from '../Utils/commander';
+import homedir from '../Utils/homedir';
 import compile from './compile';
 
 /**
- * Orchestrates the full lifecycle of running a DisChord bot: 
+ * Orchestrates the full lifecycle of running a DisChord bot:
  * Validation, Compilation, and Execution.
- * It ensures Node.js is available, triggers the compiler, and then launches 
+ * It ensures Node.js is available, triggers the compiler, and then launches
  * the resulting ESM module from the 'dist' directory.
+ *
+ * Prefers the Node.js binary bundled by the DisChord IDE (see {@link homedir.hasNodeToolchain}),
+ * so the bot runs on that known-good toolchain instead of whatever (possibly older, or entirely
+ * absent) Node.js is on the system's own PATH. Falls back to the system's 'node' when the
+ * bundled toolchain isn't present (ej. the CLI is used standalone, without the IDE).
  * * @param arg The path to the .chord file or directory to be executed.
  * @returns {Promise<void>} A promise that resolves when the bot process starts or fails.
  */
 export default async function run (arg: string) {
-    const NodeTest: boolean = Commander.test({
+    const hasBundledNode = homedir.hasNodeToolchain();
+    const nodeCommand = hasBundledNode ? `"${homedir.getNodeBinaryPath()}"` : 'node';
+
+    const NodeTest: boolean = hasBundledNode || Commander.test({
         windows: 'node -v',
         linux: 'same',
         macos: 'same'
@@ -44,7 +53,7 @@ export default async function run (arg: string) {
      * Use { stdio: 'inherit' } to allow the bot's logs to appear in the current terminal.
      */
     Commander.run({
-        windows: `cd "${path.join(dist, '../')}" & node "${indexPath}"`,
+        windows: `cd "${path.join(dist, '../')}" & ${nodeCommand} "${indexPath}"`,
         linux: 'same',
         macos: 'same'
     }, { stdio: 'inherit' });
