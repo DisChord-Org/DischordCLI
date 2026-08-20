@@ -37,6 +37,13 @@ interface UseJsonEvent {
  * NDJSON result event for external integrations (ej. DisChord Code Studio).
  * On success, also records the link in the project's 'dischord.lock.conf' lock file
  * (see {@link LockFile}), so 'chord pkg sync' can restore it later.
+ *
+ * The library's own dependencies are NOT copied into the project's 'package.json': each
+ * library already got its own isolated 'node_modules' when it was installed (see
+ * {@link pkgInstall}), and Node resolves a symlinked module's imports against its real
+ * path, so it naturally picks those up. This mirrors pnpm's own strict/symlinked
+ * 'node_modules' layout, where a package's dependencies are resolved from its own
+ * manifest rather than hoisted into a shared, potentially conflicting list.
  * @returns {Promise<void>}
  */
 export default async function pkgUse(name: string, version: string, options: UseOptions = {}): Promise<void> {

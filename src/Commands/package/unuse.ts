@@ -29,7 +29,9 @@ interface UnuseJsonEvent {
  * @param {UnuseOptions} [options] - Command options. 'json' switches the output to a single
  * NDJSON result event for external integrations (ej. DisChord Code Studio).
  * On success, also removes the entry from the project's 'dischord.lock.conf' lock file
- * (see {@link LockFile}).
+ * (see {@link LockFile}). The library's own dependencies are left untouched in the
+ * project: they were never copied into the project's 'package.json' in the first place
+ * (see {@link pkgUse}), so there's nothing to prune here either.
  * @returns {Promise<void>}
  */
 export default async function pkgUnuse(name: string, options: UnuseOptions = {}): Promise<void> {

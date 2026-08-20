@@ -5,6 +5,7 @@ import LockFile from '../../Utils/libraries/LockFile';
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
 import pkgInstall from './install';
 import pkgUse from './use';
+import { ensureProjectManifest } from '../init';
 
 import { gray, bold } from '../../Utils/drawer';
 import { emitJson } from '../../Utils/ndjson';
@@ -26,6 +27,10 @@ interface SyncJsonEvent {
  * Restores every package declared in the project's 'dischord.lock.conf' lock file
  * (see {@link LockFile}).
  *
+ * First ensures the project itself is set up (via {@link ensureProjectManifest}, the same
+ * logic 'chord init' uses to create 'package.json' and install 'seyfert') since 'package.json'
+ * is gitignored by default and therefore missing on a fresh checkout.
+ *
  * For each locked 'name: version;' entry: installs it globally if it isn't already
  * (via {@link pkgInstall}), then links it into './lib' if it isn't already linked
  * (via {@link pkgUse}), skipping entries that are already fully in place. This mirrors
@@ -40,6 +45,9 @@ interface SyncJsonEvent {
  */
 export default async function pkgSync (options: SyncOptions = {}): Promise<void> {
     const json = !!options.json;
+
+    ensureProjectManifest(process.cwd());
+
     const entries = LockFile.read();
     const names = Object.keys(entries);
 
