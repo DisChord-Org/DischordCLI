@@ -37,7 +37,7 @@ class ProjectManifest {
     public static ensure (projectDir: string): void {
         if (!ProjectManifest.exists(projectDir)) {
             Commander.run({
-                windows: `cd ${projectDir} && pnpm init`,
+                windows: `cd "${projectDir}" && pnpm init`,
                 linux: 'same',
                 macos: 'same'
             });
@@ -91,7 +91,7 @@ class ProjectManifest {
         const pkgArgs = packages.length ? ` ${packages.join(' ')}` : '';
 
         Commander.run({
-            windows: `cd ${projectDir} && pnpm install${pkgArgs}`,
+            windows: `cd "${projectDir}" && pnpm install${pkgArgs}`,
             linux: 'same',
             macos: 'same'
         });
@@ -107,7 +107,7 @@ class ProjectManifest {
         if (!packages.length) return;
 
         Commander.run({
-            windows: `cd ${projectDir} && pnpm remove ${packages.join(' ')}`,
+            windows: `cd "${projectDir}" && pnpm remove ${packages.join(' ')}`,
             linux: 'same',
             macos: 'same'
         });
