@@ -10,6 +10,7 @@ import ProjectManifest from '../../Utils/ProjectManifest';
 import LibraryAPIManager from '../../Utils/libraries/LibraryAPIManager';
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
 import compile from '../compile';
+import { syncLockedDependencies } from './sync';
 
 import { red, green, gray, yellow, bold } from "../../Utils/drawer";
 import { createBox, createDownloadProgressBar } from "../../Utils/utils";
@@ -240,6 +241,17 @@ async function installSinglePackage (name: string, version: string, json: boolea
     else console.log(gray('Instalando paquetes dependencias...'));
 
     ProjectManifest.install(packageBaseDir);
+
+    /**
+     * Restore this package's own nested dependencies, if it declares any via its own
+     * 'dischord.lock.conf' (ej. a library that itself depends on another library through
+     * 'chord pkg use' during its own development). That lock file ships with the package,
+     * but the './lib' symlinks it points to don't (they aren't portable between machines),
+     * so without this the package's compiled output would fail to resolve those imports
+     * at runtime (ERR_MODULE_NOT_FOUND) until someone manually ran 'chord pkg sync' inside
+     * its installed directory.
+     */
+    await syncLockedDependencies(packageBaseDir, json);
 
     const glob = new Bun.Glob("**/*.ts");
 

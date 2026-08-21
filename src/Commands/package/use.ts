@@ -44,12 +44,16 @@ interface UseJsonEvent {
  * path, so it naturally picks those up. This mirrors pnpm's own strict/symlinked
  * 'node_modules' layout, where a package's dependencies are resolved from its own
  * manifest rather than hoisted into a shared, potentially conflicting list.
+ * @param {string} [projectDir] - The project directory to link into. Defaults to the current
+ * working directory (the CLI command's own project); an explicit directory is used when linking
+ * a nested package's own dependencies into its own 'lib' folder, ej. during 'chord pkg install'
+ * (see {@link LockFile.getPath}).
  * @returns {Promise<void>}
  */
-export default async function pkgUse(name: string, version: string, options: UseOptions = {}): Promise<void> {
+export default async function pkgUse(name: string, version: string, options: UseOptions = {}, projectDir: string = process.cwd()): Promise<void> {
     const json = !!options.json;
     const sourcePath = path.join(LibraryLocalManager.LibrariesPath, name, version);
-    const projectLibDir = path.join(process.cwd(), 'lib');
+    const projectLibDir = path.join(projectDir, 'lib');
     const targetPath = path.join(projectLibDir, name);
 
     if (!fs.existsSync(sourcePath)) {
@@ -69,7 +73,7 @@ export default async function pkgUse(name: string, version: string, options: Use
 
     try {
         fs.symlinkSync(sourcePath, targetPath, Commander.isWindows ? 'junction' : 'dir');
-        LockFile.setEntry(name, version);
+        LockFile.setEntry(name, version, projectDir);
 
         if (json) emitJson<UseJsonEvent>({ package: name, version, phase: 'linked', path: targetPath });
         else console.log(`\n${green('Linked:')} ${bold(name)} (${version}) -> ./lib/${name}`);

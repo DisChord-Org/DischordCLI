@@ -25,20 +25,25 @@ class LockFile {
     private static readonly ENTRY_REGEX = /^([^:;]+):\s*([^;]+);?\s*$/;
 
     /**
-     * Resolves the absolute path to the lock file for the current project.
-     * @returns {string} The absolute path to 'dischord.lock.conf' in the current working directory.
+     * Resolves the absolute path to a project's lock file.
+     * @param {string} [projectDir] - The project directory. Defaults to the current working
+     * directory (the CLI commands' own project); an explicit directory is used to read/write a
+     * nested package's own lock file, ej. when restoring its dependencies recursively during
+     * 'chord pkg install' (see {@link LibraryLocalManager.LibrariesPath}).
+     * @returns {string} The absolute path to that directory's 'dischord.lock.conf'.
      */
-    public static getPath (): string {
-        return path.join(process.cwd(), LockFile.FILE_NAME);
+    public static getPath (projectDir: string = process.cwd()): string {
+        return path.join(projectDir, LockFile.FILE_NAME);
     }
 
     /**
-     * Parses the lock file into a map of package name to locked version.
+     * Parses a project's lock file into a map of package name to locked version.
      * Blank lines and lines that don't match the 'name: version;' format are ignored.
+     * @param {string} [projectDir] - The project directory. Defaults to the current working directory.
      * @returns {Record<string, string>} A map of package name to locked version. Empty if the file doesn't exist.
      */
-    public static read (): Record<string, string> {
-        const filePath = LockFile.getPath();
+    public static read (projectDir: string = process.cwd()): Record<string, string> {
+        const filePath = LockFile.getPath(projectDir);
         if (!fs.existsSync(filePath)) return {};
 
         const content = fs.readFileSync(filePath, 'utf-8');
@@ -59,42 +64,45 @@ class LockFile {
     }
 
     /**
-     * Serializes and writes the given entries to the lock file, one 'name: version;' line per
-     * entry, sorted alphabetically by package name for stable diffs.
+     * Serializes and writes the given entries to a project's lock file, one 'name: version;'
+     * line per entry, sorted alphabetically by package name for stable diffs.
      * @param {Record<string, string>} entries - The map of package name to locked version to persist.
+     * @param {string} projectDir - The project directory whose lock file should be written.
      * @returns {void}
      * @private
      */
-    private static write (entries: Record<string, string>): void {
+    private static write (entries: Record<string, string>, projectDir: string): void {
         const names = Object.keys(entries).sort();
         const lines = names.map(name => `${name}: ${entries[name]};`);
 
-        fs.writeFileSync(LockFile.getPath(), lines.length > 0 ? lines.join('\n') + '\n' : '', 'utf-8');
+        fs.writeFileSync(LockFile.getPath(projectDir), lines.length > 0 ? lines.join('\n') + '\n' : '', 'utf-8');
     }
 
     /**
-     * Adds or updates a package entry in the lock file.
+     * Adds or updates a package entry in a project's lock file.
      * @param {string} name - The package name.
      * @param {string} version - The version to lock.
+     * @param {string} [projectDir] - The project directory. Defaults to the current working directory.
      * @returns {void}
      */
-    public static setEntry (name: string, version: string): void {
-        const entries = LockFile.read();
+    public static setEntry (name: string, version: string, projectDir: string = process.cwd()): void {
+        const entries = LockFile.read(projectDir);
         entries[name] = version;
-        LockFile.write(entries);
+        LockFile.write(entries, projectDir);
     }
 
     /**
-     * Removes a package entry from the lock file, if present.
+     * Removes a package entry from a project's lock file, if present.
      * @param {string} name - The package name to remove.
+     * @param {string} [projectDir] - The project directory. Defaults to the current working directory.
      * @returns {void}
      */
-    public static removeEntry (name: string): void {
-        const entries = LockFile.read();
+    public static removeEntry (name: string, projectDir: string = process.cwd()): void {
+        const entries = LockFile.read(projectDir);
         if (!(name in entries)) return;
 
         delete entries[name];
-        LockFile.write(entries);
+        LockFile.write(entries, projectDir);
     }
 }
 
