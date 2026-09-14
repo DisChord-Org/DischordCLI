@@ -91,7 +91,19 @@ class LibraryLocalManager {
         if (remainingVersions.length > 0) return;
 
         if (fs.existsSync(packageDataPath)) fs.rmSync(packageDataPath);
-        if (fs.existsSync(packagePath) && fs.readdirSync(packagePath).length === 0) fs.rmSync(packagePath, { recursive: true, force: true });
+
+        /**
+         * Ignore '.DS_Store' when deciding whether the package root is empty. Finder creates
+         * this file silently in any folder it has browsed (ej. the user opened the DisChord
+         * libraries folder in Finder), so on macOS it was making this check see a 'non-empty'
+         * folder forever, leaving an orphaned package directory behind after every version was
+         * removed - which in turn made 'existsRepo(name)' keep reporting the package as installed.
+         */
+        const remainingEntries = fs.existsSync(packagePath)
+            ? fs.readdirSync(packagePath).filter(entry => entry !== '.DS_Store')
+            : [];
+
+        if (remainingEntries.length === 0 && fs.existsSync(packagePath)) fs.rmSync(packagePath, { recursive: true, force: true });
     }
     /*
      * Scans the file system for existing version folders of a specific repository.
