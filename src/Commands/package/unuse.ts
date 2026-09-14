@@ -54,8 +54,14 @@ export default async function pkgUnuse(name: string, options: UnuseOptions = {})
 
         LockFile.removeEntry(name);
 
+        /**
+         * Ignore '.DS_Store' when deciding whether './lib' is empty - Finder creates it silently
+         * in any folder it has browsed, which on macOS was making this check see a 'non-empty'
+         * folder forever and leaving an orphaned empty './lib' behind after the last unuse.
+         */
         let libDirRemoved = false;
-        if (fs.readdirSync(projectLibDir).length === 0) {
+        const remainingEntries = fs.readdirSync(projectLibDir).filter(entry => entry !== '.DS_Store');
+        if (remainingEntries.length === 0) {
             fs.rmSync(projectLibDir, { recursive: true, force: true });
             libDirRemoved = true;
         }
