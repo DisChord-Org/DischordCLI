@@ -106,17 +106,36 @@ export function createDownloadProgressBar(resourceName: string): { bar: cliProgr
 export function setupWindowsPath(): void {
     if (!Commander.isWindows) return;
 
-    try {
-        const currentPath = execSync('reg query HKCU\\Environment /v PATH', { encoding: 'utf8' });
-        
-        const pathMatch = currentPath.match(/PATH\s+REG_SZ\s+(.*)/);
-        const pathValue = pathMatch ? pathMatch[1] : '';
+    /**
+     * The existing value's type (REG_SZ or REG_EXPAND_SZ - the latter is what Windows uses by
+     * default whenever PATH is edited through the system GUI). The previous version of this
+     * function only matched 'REG_SZ' literally, so an EXPAND_SZ-typed PATH silently failed to
+     * parse, pathValue fell back to '', and the write below replaced the user's entire PATH
+     * with just the DisChord bin folder. Also preserve the original type on write instead of
+     * always writing REG_SZ, so any %VAR%-style references in the existing value keep expanding.
+     */
+    let pathValue = '';
+    let valueType = 'REG_SZ';
 
-        if (!pathValue.includes(homedir._BinFolder)) {
-            execSync(`setx PATH "${pathValue};${homedir._BinFolder}"`);
-            console.log(green('Ruta añadida al PATH con éxito.'));
-            console.log(yellow('Nota:') + ' Reinicia tu terminal para ver los cambios.');
+    try {
+        const queryOutput = execSync('reg query HKCU\\Environment /v PATH', { encoding: 'utf8' });
+        const pathMatch = queryOutput.match(/PATH\s+(REG_(?:EXPAND_)?SZ)\s+(.*)/);
+        if (pathMatch) {
+            valueType = pathMatch[1];
+            pathValue = pathMatch[2].trim();
         }
+    } catch {
+        // No existing HKCU PATH value - we'll create one below instead of leaving it unset.
+    }
+
+    if (pathValue.includes(homedir._BinFolder)) return;
+
+    try {
+        // 'reg add' is used instead of 'setx', which silently truncates values over 1024 characters.
+        const newValue = pathValue ? `${pathValue};${homedir._BinFolder}` : homedir._BinFolder;
+        execSync(`reg add "HKCU\\Environment" /v PATH /t ${valueType} /d "${newValue}" /f`);
+        console.log(green('Ruta añadida al PATH con éxito.'));
+        console.log(yellow('Nota:') + ' Reinicia tu terminal para ver los cambios.');
     } catch (error) {
         console.error(red('Error al modificar el PATH:'), error instanceof Error ? error.message : error);
     }
