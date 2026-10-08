@@ -1,4 +1,6 @@
 import fs from 'fs';
+import { spawn, spawnSync } from 'child_process';
+import { constants as osConstants } from 'os';
 import path from 'path';
 import { gray, red } from '../Utils/drawer';
 import Commander from '../Utils/commander';
@@ -20,7 +22,6 @@ import compile from './compile';
  */
 export default async function run (arg: string) {
     const hasBundledNode = homedir.hasNodeToolchain();
-    const nodeCommand = hasBundledNode ? `"${homedir.getNodeBinaryPath()}"` : 'node';
 
     const NodeTest: boolean = hasBundledNode || Commander.test({
         windows: 'node -v',
@@ -49,12 +50,57 @@ export default async function run (arg: string) {
 
     /**
      * Final Execution:
-     * Navigates to the project root and executes the compiled JavaScript using Node.js.
-     * Use { stdio: 'inherit' } to allow the bot's logs to appear in the current terminal.
+     * Spawns Node.js directly (no shell, no backgrounding) with the project root as cwd, so the
+     * bot stays a direct child of 'chord'. Termination signals are forwarded to it and 'chord'
+     * exits with the child's exit code, so no orphaned bot processes are left behind.
      */
-    Commander.run({
-        windows: `cd "${path.join(dist, '../')}" & ${nodeCommand} "${indexPath}"`,
-        linux: 'same',
-        macos: 'same'
-    }, { stdio: 'inherit' });
+    const nodeBinary = hasBundledNode ? homedir.getNodeBinaryPath() : 'node';
+    const child = spawn(nodeBinary, [indexPath], {
+        cwd: path.join(dist, '../'),
+        stdio: 'inherit'
+    });
+
+    let exiting = false;
+
+    const terminate = (signal: NodeJS.Signals) => {
+        if (child.exitCode !== null || child.signalCode !== null || child.pid === undefined) return;
+
+        if (Commander.isWindows) {
+            try {
+                spawnSync(
+                    'taskkill',
+                    [ '/pid', String(child.pid), '/T', '/F' ],
+                    { stdio: 'ignore' }
+                );
+            } catch {}
+        } else {
+            try {
+                child.kill(signal);
+            } catch {}
+        }
+    };
+
+    const signals: NodeJS.Signals[] = Commander.isWindows ? ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'] : ['SIGINT', 'SIGTERM', 'SIGHUP'];
+
+    for (const signal of signals) {
+        process.on(signal, () => {
+            exiting = true;
+            terminate(signal);
+        });
+    }
+
+    // last resort: never leave the child behind if chord itself exits first.
+    process.on('exit', () => terminate('SIGTERM'));
+
+    child.on('error', (err) => {
+        console.log(red('ERROR: ') + 'No se pudo iniciar Node.js.\n' + gray(err.message));
+        process.exit(1);
+    });
+
+    child.on('exit', (code, signal) => {
+        if (code !== null) process.exit(code);
+        // killed by a signal: mirror the shell convention (128 + signal number).
+        const num = signal ? (osConstants.signals[signal] ?? 0) : 0;
+        process.exit(exiting || num === 0 ? 0 : 128 + num);
+    });
 }
