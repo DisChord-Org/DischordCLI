@@ -60,17 +60,27 @@ class LibraryLocalManager {
     /**
      * Scans the local libraries directory and reconstructs the installed packages record.
      * Reads the 'data.json' file from each package's root directory to retrieve metadata.
+     * Entries that are not directories (ej. Finder's '.DS_Store', stray files), directories without
+     * a 'data.json', and entries whose 'data.json' is unreadable or invalid are skipped.
      * @static
      * @returns {PackagesRecordResponse} A map of installed packages indexed by their name.
-     * @throws {Error} If a 'data.json' file is missing or contains invalid JSON.
      */
     static getPackages (): PackagesRecordResponse {
         const librariesRecord: PackagesRecordResponse = {};
-        
-        fs.readdirSync(this.LibrariesPath).map(file => {
-            const library = JSON.parse(fs.readFileSync(path.join(this.LibrariesPath, file, 'data.json'), 'utf8')) as PackageResponse
-            librariesRecord[library.name] = library;
-        });
+
+        for (const entry of fs.readdirSync(this.LibrariesPath)) {
+            const dataPath = path.join(this.LibrariesPath, entry, 'data.json');
+
+            try {
+                if (!fs.statSync(path.join(this.LibrariesPath, entry)).isDirectory()) continue;
+                if (!fs.statSync(dataPath).isFile()) continue;
+
+                const library = JSON.parse(fs.readFileSync(dataPath, 'utf8')) as PackageResponse;
+                if (library && typeof library.name === 'string') librariesRecord[library.name] = library;
+            } catch {
+                continue;
+            }
+        }
 
         return librariesRecord;
     }
