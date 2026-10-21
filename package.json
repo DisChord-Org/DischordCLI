@@ -1,10 +1,10 @@
 {
   "name": "DisChordCLI",
-  "version": "1.7.4",
+  "version": "1.7.6",
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun test",
     "dev": "bun ./src/index.ts"
   },
   "keywords": [],
