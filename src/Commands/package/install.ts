@@ -10,6 +10,7 @@ import ProjectManifest from '../../Utils/ProjectManifest';
 import LibraryAPIManager from '../../Utils/libraries/LibraryAPIManager';
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
 import compile from '../compile';
+import { PackageResponse } from '../../Utils/libraries/types';
 import { syncLockedDependencies } from './sync';
 
 import { red, green, gray, yellow, bold } from "../../Utils/drawer";
@@ -131,6 +132,29 @@ async function installSinglePackage (name: string, version: string, json: boolea
         return;
     }
 
+    /**
+     * The version folder is created by the download, so any failure or abort past this point would
+     * leave it behind and 'existsRepo(name, version)' would report a broken install as present
+     * (ej. the next attempt answering 'already_installed'). Remove it unless the install completed.
+     */
+    let installed = false;
+    try {
+        installed = await installPackageFiles(name, version, pkg, json);
+    } finally {
+        if (!installed) LibraryLocalManager.removePackage(name, pkg.version);
+    }
+}
+
+/**
+ * Downloads, verifies, extracts and builds an already-resolved package into the global storage.
+ * @param {string} name - The package name.
+ * @param {string} version - The version tag used to request the download endpoints.
+ * @param {PackageResponse} pkg - The registry data of the package being installed.
+ * @param {boolean} json - Whether to emit NDJSON progress events instead of human-readable output.
+ * @returns {Promise<boolean>} True if the package was fully installed, false if it was aborted
+ * (invalid signature or declined confirmation).
+ */
+async function installPackageFiles (name: string, version: string, pkg: PackageResponse, json: boolean): Promise<boolean> {
     const packageBaseDir = path.join(LibraryLocalManager.LibrariesPath, name, pkg.version);
     const zipPath = path.join(packageBaseDir, `${name}-${pkg.version}.zip`);
     const sigPath = `${zipPath}.asc`;
@@ -187,7 +211,7 @@ async function installSinglePackage (name: string, version: string, json: boolea
 
             if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
             if (fs.existsSync(sigPath)) fs.unlinkSync(sigPath);
-            return;
+            return false;
         }
 
         if (!json) console.log(gray('Firma verificada correctamente.'));
@@ -208,10 +232,10 @@ async function installSinglePackage (name: string, version: string, json: boolea
                 console.log(bold(red("\nInstalación cancelada.")));
                 if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
                 terminal.processExit(0);
-                return;
+                return false;
             }
             console.log(bold(red("\nContinuando instalación sin firma...")));
-            terminal.processExit(0);
+            terminal.grabInput(false);
         }
     }
 
@@ -310,4 +334,6 @@ async function installSinglePackage (name: string, version: string, json: boolea
         console.log(`Paquete ${bold(`${name}@${pkg.version}`)} instalado con éxito.`);
         console.log(`\n${bold(green('+ ') + name)} ${gray(pkg.version)}\n`);
     }
+
+    return true;
 }
