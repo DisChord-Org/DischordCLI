@@ -1,3 +1,5 @@
+import type { DownloadProgress, DownloadProgressHandler } from './requester';
+
 /**
  * Shared NDJSON (newline-delimited JSON) reporting primitives.
  *
@@ -5,18 +7,11 @@
  * 'chord pkg install', ...) writes one JSON object per line to stdout so
  * external integrations (ej. DisChord Code Studio) can track progress.
  * Each command still owns its own event shape and phase names - this module
- * only centralizes the serialization and progress-throttling mechanics that
- * were previously duplicated across those commands.
+ * only centralizes the serialization and progress-throttling mechanics.
  *
  * The wire format emitted by any existing caller must not change as a
  * result of using these helpers, since integrations already parse it.
  */
-
-/** Minimal shape of a download progress snapshot, as reported by Requester.downloadFile. */
-interface DownloadProgress {
-    total: number;
-    transferred: number;
-}
 
 /**
  * Serializes an event as a single line of JSON and writes it to stdout.
@@ -35,11 +30,11 @@ export function emitJson<T> (event: T): void {
  * @template T - The shape of the progress event being emitted.
  * @param {(percent: number, progress: DownloadProgress) => T} buildEvent - Builds
  * the event payload for a given progress snapshot.
- * @returns {(progress: DownloadProgress) => void} A throttled progress callback.
+ * @returns {DownloadProgressHandler} A throttled progress callback.
  */
 export function createThrottledProgressEmitter<T> (
     buildEvent: (percent: number, progress: DownloadProgress) => T
-): (progress: DownloadProgress) => void {
+): DownloadProgressHandler {
     let lastEmittedPercent = -1;
 
     return (progress: DownloadProgress) => {

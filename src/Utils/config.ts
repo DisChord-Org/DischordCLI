@@ -1,4 +1,7 @@
+/**
+ * Static configuration of the DisChord API the CLI talks to.
+ */
 export default {
-    "host": "https://api.theindiebrand.es",
-    "port": 45350
-}
+    /** Base URL of the DisChord API, without a trailing slash. */
+    host: 'https://api.theindiebrand.es'
+} as const;

@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
+import { isValidPackageName, isValidVersionTag } from './validation';
+import { warn } from '../output';
+import { yellow } from '../drawer';
+
 /**
  * Manages the project-level dependency lock file ('dischord.lock.conf').
  *
@@ -15,10 +19,14 @@ import path from 'path';
  *   ent: v1.0.3;
  *   sf: v1.0.0;
  *
+ * The file is untrusted input: it ships inside downloaded packages and cloned projects, and
+ * its entries end up in filesystem paths. Entries whose name or version are not valid are
+ * therefore dropped while reading (see {@link isValidPackageName}, {@link isValidVersionTag}).
+ *
  * @class LockFile
  */
 class LockFile {
-    /** File name of the lock file, always resolved relative to the current working directory. */
+    /** File name of the lock file, resolved relative to a project directory. */
     private static readonly FILE_NAME = 'dischord.lock.conf';
 
     /** Matches a single 'name: version;' line, tolerating surrounding whitespace and an optional trailing ';'. */
@@ -37,8 +45,18 @@ class LockFile {
     }
 
     /**
+     * Checks whether a project has a lock file.
+     * @param {string} [projectDir] - The project directory. Defaults to the current working directory.
+     * @returns {boolean} True if 'dischord.lock.conf' exists in that directory.
+     */
+    public static exists (projectDir: string = process.cwd()): boolean {
+        return fs.existsSync(LockFile.getPath(projectDir));
+    }
+
+    /**
      * Parses a project's lock file into a map of package name to locked version.
-     * Blank lines and lines that don't match the 'name: version;' format are ignored.
+     * Blank lines and lines that don't match the 'name: version;' format are ignored, and
+     * entries with an invalid package name or version are skipped with a warning.
      * @param {string} [projectDir] - The project directory. Defaults to the current working directory.
      * @returns {Record<string, string>} A map of package name to locked version. Empty if the file doesn't exist.
      */
@@ -56,8 +74,15 @@ class LockFile {
             const match = trimmed.match(LockFile.ENTRY_REGEX);
             if (!match) continue;
 
-            const [, name, version] = match;
-            entries[name.trim()] = version.trim();
+            const name = match[1].trim();
+            const version = match[2].trim();
+
+            if (!isValidPackageName(name) || !isValidVersionTag(version)) {
+                warn(yellow('ADVERTENCIA: ') + `Se ignora la entrada no válida "${trimmed}" de ${filePath}.`);
+                continue;
+            }
+
+            entries[name] = version;
         }
 
         return entries;
@@ -95,14 +120,16 @@ class LockFile {
      * Removes a package entry from a project's lock file, if present.
      * @param {string} name - The package name to remove.
      * @param {string} [projectDir] - The project directory. Defaults to the current working directory.
-     * @returns {void}
+     * @returns {boolean} True if an entry was removed, false if there was none.
      */
-    public static removeEntry (name: string, projectDir: string = process.cwd()): void {
+    public static removeEntry (name: string, projectDir: string = process.cwd()): boolean {
         const entries = LockFile.read(projectDir);
-        if (!(name in entries)) return;
+        if (!Object.prototype.hasOwnProperty.call(entries, name)) return false;
 
         delete entries[name];
         LockFile.write(entries, projectDir);
+
+        return true;
     }
 }
 

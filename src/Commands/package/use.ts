@@ -3,10 +3,13 @@ import fs from 'fs';
 
 import LibraryLocalManager from '../../Utils/libraries/LibraryLocalManager';
 import LockFile from '../../Utils/libraries/LockFile';
+import { createDirectoryLink, removeEntry } from '../../Utils/libraries/links';
+import { isValidPackageName, isValidVersionTag } from '../../Utils/libraries/validation';
 
-import { red, green, gray, bold } from "../../Utils/drawer";
+import { red, green, gray, bold } from '../../Utils/drawer';
 import Commander from '../../Utils/commander';
 import { emitJson } from '../../Utils/ndjson';
+import { fail, markFailed } from '../../Utils/output';
 
 /** Options accepted by the {@link pkgUse} command. */
 interface UseOptions {
@@ -16,10 +19,15 @@ interface UseOptions {
 
 /** Result event emitted by {@link pkgUse} when running in --json mode. */
 interface UseJsonEvent {
+    /** The package the event refers to. */
     package: string;
+    /** The version that was requested. */
     version: string;
+    /** The outcome of the command. */
     phase: 'linked' | 'not_installed' | 'error';
+    /** Absolute path of the created link. Only present on success. */
     path?: string;
+    /** Human-readable detail, present on failures. */
     message?: string;
 }
 
@@ -48,42 +56,59 @@ interface UseJsonEvent {
  * working directory (the CLI command's own project); an explicit directory is used when linking
  * a nested package's own dependencies into its own 'lib' folder, ej. during 'chord pkg install'
  * (see {@link LockFile.getPath}).
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} True if the library was linked, false otherwise.
  */
-export default async function pkgUse(name: string, version: string, options: UseOptions = {}, projectDir: string = process.cwd()): Promise<void> {
+export default async function pkgUse (name: string, version: string, options: UseOptions = {}, projectDir: string = process.cwd()): Promise<boolean> {
     const json = !!options.json;
-    const sourcePath = path.join(LibraryLocalManager.LibrariesPath, name, version);
+
+    const reportFailure = (phase: 'not_installed' | 'error', message: string): false => {
+        if (json) emitJson<UseJsonEvent>({ package: name, version, phase, message });
+        else fail(red(message));
+
+        markFailed();
+        return false;
+    };
+
+    if (!isValidPackageName(name) || !isValidVersionTag(version)) {
+        return reportFailure('error', `"${name}@${version}" no es una referencia de paquete válida.`);
+    }
+
+    const sourcePath = LibraryLocalManager.getVersionDir(name, version);
     const projectLibDir = path.join(projectDir, 'lib');
     const targetPath = path.join(projectLibDir, name);
 
-    if (!fs.existsSync(sourcePath)) {
-        const message = `${name}@${version} no está instalada.`;
-        if (json) emitJson<UseJsonEvent>({ package: name, version, phase: 'not_installed', message });
-        else console.log(red(`${bold(`${name}@${version}`)} no está instalada.`));
-        return;
-    }
-
-    if (!fs.existsSync(projectLibDir)) fs.mkdirSync(projectLibDir, { recursive: true });
-
-    if (fs.existsSync(targetPath)) {
-        const stats = fs.lstatSync(targetPath);
-        if (stats.isSymbolicLink() || stats.isFile()) fs.unlinkSync(targetPath);
-        else fs.rmSync(targetPath, { recursive: true, force: true });
+    /**
+     * A version still being installed by this very process is accepted too: it happens when
+     * two packages depend on each other, and each has to be linked into the other while both
+     * installations are still in progress.
+     */
+    if (!LibraryLocalManager.existsRepo(name, version) && !LibraryLocalManager.isInstallActive(name, version)) {
+        return reportFailure('not_installed', `${name}@${version} no está instalada.`);
     }
 
     try {
-        fs.symlinkSync(sourcePath, targetPath, Commander.isWindows ? 'junction' : 'dir');
-        LockFile.setEntry(name, version, projectDir);
+        fs.mkdirSync(projectLibDir, { recursive: true });
 
-        if (json) emitJson<UseJsonEvent>({ package: name, version, phase: 'linked', path: targetPath });
-        else console.log(`\n${green('Linked:')} ${bold(name)} (${version}) -> ./lib/${name}`);
-    } catch (error: any) {
+        removeEntry(targetPath);
+        createDirectoryLink(sourcePath, targetPath);
+        LockFile.setEntry(name, version, projectDir);
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        const tip = Commander.isWindows ? " En Windows, activa el 'Modo Desarrollador' o ejecuta como Admin." : '';
+
         if (json) {
-            const tip = Commander.isWindows ? " En Windows, activa el 'Modo Desarrollador' o ejecuta como Admin." : undefined;
-            emitJson<UseJsonEvent>({ package: name, version, phase: 'error', message: `Error al crear el enlace simbólico: ${error.message}.${tip ?? ''}` });
+            emitJson<UseJsonEvent>({ package: name, version, phase: 'error', message: `Error al crear el enlace simbólico: ${reason}.${tip}` });
+            markFailed();
         } else {
-            console.log(red(`\nError al crear el enlace simbólico: ${error.message}`));
-            if (Commander.isWindows) console.log(gray("Tip: En Windows, activa el 'Modo Desarrollador' o ejecuta como Admin."));
+            fail(red(`\nError al crear el enlace simbólico: ${reason}`));
+            if (tip) console.error(gray(`Tip:${tip}`));
         }
+
+        return false;
     }
+
+    if (json) emitJson<UseJsonEvent>({ package: name, version, phase: 'linked', path: targetPath });
+    else console.log(`\n${green('Linked:')} ${bold(name)} (${version}) -> ./lib/${name}`);
+
+    return true;
 }

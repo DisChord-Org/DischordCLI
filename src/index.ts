@@ -1,25 +1,74 @@
-import { Argument, Option, program } from "commander";
+import { Argument, Option, program } from 'commander';
 
 import pkg from '../package.json';
-import './Utils/homedir';
-import "./Utils/utils";
+import homedir from './Utils/homedir';
+import LibraryLocalManager from './Utils/libraries/LibraryLocalManager';
+import { ensureBinFolderOnPath } from './Utils/pathSetup';
+import { red } from './Utils/drawer';
+import { errorMessage, fail, markFailed } from './Utils/output';
 
-import init from "./Commands/init";
-import update from "./Commands/update";
-import compile from "./Commands/compile";
-import run from "./Commands/run";
-import pkgInstall from "./Commands/package/install";
-import pkgSearch from "./Commands/package/search";
-import pkgUninstall from "./Commands/package/uninstall";
-import pkgUse from "./Commands/package/use";
-import pkgUnuse from "./Commands/package/unuse";
-import pkgSync from "./Commands/package/sync";
+import init from './Commands/init';
+import update from './Commands/update';
+import compile from './Commands/compile';
+import run from './Commands/run';
+import pkgInstall from './Commands/package/install';
+import pkgSearch from './Commands/package/search';
+import pkgUninstall from './Commands/package/uninstall';
+import pkgUse from './Commands/package/use';
+import pkgUnuse from './Commands/package/unuse';
+import pkgSync from './Commands/package/sync';
 
 /**
  * Main Entry Point for the DisChord CLI.
  * This file configures the 'chord' command using the Commander.js library,
  * defining the global options, subcommands, and their respective action handlers.
  */
+
+/** A command implementation: resolves to false when the command did not succeed. */
+type CommandHandler<Args extends unknown[]> = (...args: Args) => boolean | Promise<boolean>;
+
+/**
+ * Wraps a command implementation into a Commander action handler with uniform failure
+ * handling: a command that reports failure or throws makes the process exit with a non-zero
+ * code, and an unexpected exception is printed as a one-line error instead of a stack trace.
+ * @template Args - The arguments Commander passes to the action.
+ * @param {CommandHandler<Args>} handler - The command implementation.
+ * @returns {(...args: Args) => Promise<void>} The action handler to register.
+ */
+function action<Args extends unknown[]> (handler: CommandHandler<Args>): (...args: Args) => Promise<void> {
+    return async (...args: Args): Promise<void> => {
+        try {
+            if (!(await handler(...args))) markFailed();
+        } catch (error) {
+            fail(red('ERROR: ') + errorMessage(error));
+        }
+    };
+}
+
+/**
+ * Builds the '--json' option shared by every command that can report to external integrations.
+ * @param {string} [description] - The help text of the option.
+ * @returns {Option} A fresh option instance.
+ */
+function jsonOption (description: string = 'Salida en NDJSON para integraciones como DisChord Code Studio'): Option {
+    return new Option('--json', description).default(false, 'salida legible para humanos');
+}
+
+/**
+ * Builds the '--allow-unsigned' option shared by the commands that can install packages.
+ * @returns {Option} A fresh option instance.
+ */
+function allowUnsignedOption (): Option {
+    return new Option('--allow-unsigned', 'Instala sin pedir confirmación paquetes sin firmar o de origen no verificado (obligatorio con --json)').default(false, 'pedir confirmación');
+}
+
+/**
+ * One-time environment preparation, done explicitly here instead of as an import side effect:
+ * creates the DisChord folders and registers the binary folder in the user's PATH.
+ */
+homedir.ensureDirectories();
+LibraryLocalManager.ensureStorage();
+ensureBinFolderOnPath();
 
 program
     .name('chord')
@@ -36,11 +85,11 @@ program
     .command('init')
     .description('Inicializa un nuevo proyecto de DisChord')
     .addArgument(new Argument('<ruta>', 'Ruta donde se creará el proyecto').argRequired())
-    .action((args) => init(args));
+    .action(action((projectPath: string) => init(projectPath)));
 
 /**
  * Subcommand: update
- * Manages updates for the CLI, Compiler, or the entire ecosystem.
+ * Manages updates for the CLI, Compiler, or both.
  * Includes a --force option to bypass version comparison, and a --json
  * option that switches the output to NDJSON (one JSON object per line)
  * for external integrations such as DisChord Code Studio.
@@ -48,19 +97,15 @@ program
  */
 program
     .command('update')
-    .description('Actualiza la CLI, IDE, Compilador o todo.')
+    .description('Actualiza la CLI, el Compilador o ambos.')
     .addArgument(
         new Argument('<componente>', 'Componente a actualizar')
-            .choices([ 'cli', 'compiler', 'all' ])
+            .choices(['cli', 'compiler', 'all'])
             .argRequired()
     )
-    .addOption(
-        new Option('-f, --force', 'Forzar actualización ignorando versiones').default(false, 'no forzar')
-    )
-    .addOption(
-        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
-    )
-    .action((args, options) => update(args, options));
+    .addOption(new Option('-f, --force', 'Forzar actualización ignorando versiones').default(false, 'no forzar'))
+    .addOption(jsonOption())
+    .action(action((target: 'cli' | 'compiler' | 'all', options: { force: boolean, json: boolean }) => update(target, options)));
 
 /**
  * Subcommand: compile
@@ -70,8 +115,8 @@ program
 program
     .command('compile')
     .description('Compila un fichero .chord')
-    .addArgument(new Argument('<ruta>', 'Ruta del proyecto').argRequired())
-    .action((args) => compile(args));
+    .addArgument(new Argument('<ruta>', 'Ruta del fichero .chord, o del proyecto para compilar su src/index.chord').argRequired())
+    .action(action((sourcePath: string) => compile(sourcePath)));
 
 /**
  * Subcommand: run
@@ -81,8 +126,8 @@ program
 program
     .command('run')
     .description('Ejecuta un proyecto de DisChord')
-    .addArgument(new Argument('<ruta>', 'Ruta del proyecto').argRequired())
-    .action((args) => run(args));
+    .addArgument(new Argument('<ruta>', 'Ruta del fichero .chord, o del proyecto para ejecutar su src/index.chord').argRequired())
+    .action(action((sourcePath: string) => run(sourcePath)));
 
 /**
  * Command Group: pkg
@@ -94,23 +139,23 @@ const pkgCommand = program
 
 /**
  * Subcommand: pkg install
- * Downloads and installs a DisChord library globally. Includes a --json option
+ * Downloads and installs one or more DisChord libraries globally. Includes a --json option
  * that switches the output to NDJSON (one JSON object per line) for external
- * integrations such as DisChord Code Studio, mirroring 'chord update --json'.
- * Usage: chord pkg install <nombre> [version] [--json]
+ * integrations such as DisChord Code Studio, mirroring 'chord update --json', and an
+ * --allow-unsigned option to accept unsigned packages without the interactive confirmation.
+ * Usage: chord pkg install <nombre[@version]...> [--json] [--allow-unsigned]
  */
 pkgCommand
     .command('install')
     .description('Instala una librería de DisChord')
-    .addArgument(new Argument('<packages...>', 'Paquetes a instalar').argRequired())
-    .addOption(
-        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
-    )
-    .action((packages, options) => pkgInstall(packages, options));
+    .addArgument(new Argument('<packages...>', 'Paquetes a instalar, como nombre o nombre@version').argRequired())
+    .addOption(jsonOption())
+    .addOption(allowUnsignedOption())
+    .action(action((packages: string[], options: { json: boolean, allowUnsigned: boolean }) => pkgInstall(packages, options)));
 
 /**
  * Subcommand: pkg uninstall
- * Permanently removes a library or a specific version from the global storage.
+ * Permanently removes a specific version of a library from the global storage.
  * Includes a --json option that emits a single NDJSON result event for external
  * integrations such as DisChord Code Studio.
  * Usage: chord pkg uninstall <nombre> <version> [--json]
@@ -120,10 +165,8 @@ pkgCommand
     .description('Elimina una librería globalmente')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
     .addArgument(new Argument('<version>', 'Versión a borrar').argRequired())
-    .addOption(
-        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
-    )
-    .action((name, version, options) => pkgUninstall(name, version, options));
+    .addOption(jsonOption())
+    .action(action((name: string, version: string, options: { json: boolean }) => pkgUninstall(name, version, options)));
 
 /**
  * Subcommand: pkg search
@@ -137,13 +180,9 @@ pkgCommand
     .command('search')
     .description('Busca librerías disponibles en el registro oficial')
     .addArgument(new Argument('[query]', 'Término de búsqueda'))
-    .addOption(
-        new Option('-i, --installed', 'Forzar la búsqueda local').default(false, 'no forzar')
-    )
-    .addOption(
-        new Option('--json', 'Salida en JSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
-    )
-    .action((query, options) => pkgSearch(query, options));
+    .addOption(new Option('-i, --installed', 'Forzar la búsqueda local').default(false, 'no forzar'))
+    .addOption(jsonOption('Salida en JSON para integraciones como DisChord Code Studio'))
+    .action(action((query: string | undefined, options: { installed: boolean, json: boolean }) => pkgSearch(query, options)));
 
 /**
  * Subcommand: pkg use
@@ -158,10 +197,8 @@ pkgCommand
     .description('Implementa en tu proyecto actual la librería especificada')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
     .addArgument(new Argument('<version>', 'Versión a la que cambiar').argRequired())
-    .addOption(
-        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
-    )
-    .action((name, version, options) => pkgUse(name, version, options));
+    .addOption(jsonOption())
+    .action(action((name: string, version: string, options: { json: boolean }) => pkgUse(name, version, options)));
 
 /**
  * Subcommand: pkg unuse
@@ -174,10 +211,8 @@ pkgCommand
     .command('unuse')
     .description('Elimina de tu proyecto actual la librería especificada')
     .addArgument(new Argument('<nombre>', 'Nombre del paquete').argRequired())
-    .addOption(
-        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
-    )
-    .action((name, options) => pkgUnuse(name, options));
+    .addOption(jsonOption())
+    .action(action((name: string, options: { json: boolean }) => pkgUnuse(name, options)));
 
 /**
  * Subcommand: pkg sync
@@ -185,17 +220,16 @@ pkgCommand
  * installs any that are missing globally and links them into './lib', skipping
  * ones already in place. Mirrors 'npm install' / 'pip install -r requirements.txt'.
  * Includes a --json option for external integrations such as DisChord Code Studio.
- * Usage: chord pkg sync [--json]
+ * Usage: chord pkg sync [--json] [--allow-unsigned]
  */
 pkgCommand
     .command('sync')
     .description('Instala y enlaza en tu proyecto todos los paquetes declarados en dischord.lock.conf')
-    .addOption(
-        new Option('--json', 'Salida en NDJSON para integraciones como DisChord Code Studio').default(false, 'salida legible para humanos')
-    )
-    .action((options) => pkgSync(options));
+    .addOption(jsonOption())
+    .addOption(allowUnsignedOption())
+    .action(action((options: { json: boolean, allowUnsigned: boolean }) => pkgSync(options)));
 
 /**
  * Process the raw command-line arguments provided by the user.
  */
-program.parse(process.argv);
+await program.parseAsync(process.argv);

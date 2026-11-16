@@ -39,7 +39,7 @@ export function green(text: string) {
 /**
  * Utility function to wrap text in cyan color for terminal output.
  * @param text The string to be colored.
- * @returns The formatted string with bright green ANSI codes.
+ * @returns The formatted string with cyan ANSI codes.
  */
 export function cyan (text: string) {
     return chalk.cyan(text);
